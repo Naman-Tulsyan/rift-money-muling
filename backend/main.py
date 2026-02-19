@@ -80,6 +80,25 @@ class GraphAnalysisResponse(BaseModel):
     incoming_map: Dict[str, List[Dict]]
 
 
+class SuspiciousRing(BaseModel):
+    """Model for suspicious ring detection."""
+    ring_id: str
+    members: List[str]
+    pattern: str
+    risk_score: Optional[float] = None
+    total_amount: Optional[float] = None
+    transaction_count: Optional[int] = None
+
+
+class RingDetectionResponse(BaseModel):
+    """Response model for ring detection analysis."""
+    success: bool
+    message: str
+    total_rings: int
+    suspicious_rings: List[SuspiciousRing]
+    graph_stats: Dict[str, Any]
+
+
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {"message": "Rift Money Muling backend is running"}
@@ -216,6 +235,131 @@ def graph_to_json(G: nx.MultiDiGraph) -> Dict[str, Any]:
     return {"nodes": nodes, "edges": edges}
 
 
+def convert_to_simple_graph(G: nx.MultiDiGraph) -> nx.DiGraph:
+    """
+    Convert MultiDiGraph to simple DiGraph for cycle detection.
+    
+    Args:
+        G: NetworkX MultiDiGraph
+        
+    Returns:
+        NetworkX DiGraph
+    """
+    simple_G = nx.DiGraph()
+
+    for u, v in G.edges():
+        simple_G.add_edge(u, v)
+
+    return simple_G
+
+
+def detect_cycles(G: nx.MultiDiGraph) -> List[List[str]]:
+    """
+    Detect all cycles in the graph.
+    
+    Args:
+        G: NetworkX MultiDiGraph
+        
+    Returns:
+        List of cycles (each cycle is a list of node IDs)
+    """
+    simple_G = convert_to_simple_graph(G)
+    all_cycles = list(nx.simple_cycles(simple_G))
+    return all_cycles
+
+
+def filter_valid_cycles(cycles: List[List[str]]) -> List[List[str]]:
+    """
+    Filter cycles to only include those with 3-5 members.
+    
+    Args:
+        cycles: List of all detected cycles
+        
+    Returns:
+        List of valid cycles (3-5 members)
+    """
+    return [c for c in cycles if 3 <= len(c) <= 5]
+
+
+def calculate_ring_metrics(cycle: List[str], G: nx.MultiDiGraph) -> Dict[str, float]:
+    """
+    Calculate metrics for a suspicious ring.
+    
+    Args:
+        cycle: List of account IDs in the ring
+        G: NetworkX MultiDiGraph
+        
+    Returns:
+        Dictionary with ring metrics
+    """
+    total_amount = 0
+    transaction_count = 0
+    
+    # Calculate total amount and transaction count within the ring
+    for i in range(len(cycle)):
+        current = cycle[i]
+        next_node = cycle[(i + 1) % len(cycle)]
+        
+        # Check if there's an edge from current to next_node
+        if G.has_edge(current, next_node):
+            for key, data in G[current][next_node].items():
+                total_amount += data.get('amount', 0)
+                transaction_count += 1
+    
+    # Calculate risk score based on amount and frequency
+    risk_score = (total_amount / 100000) + (transaction_count * 0.1)  # Simple heuristic
+    risk_score = min(risk_score, 10.0)  # Cap at 10
+    
+    return {
+        'total_amount': total_amount,
+        'transaction_count': transaction_count,
+        'risk_score': risk_score
+    }
+
+
+def build_cycle_rings(valid_cycles: List[List[str]], G: nx.MultiDiGraph) -> List[SuspiciousRing]:
+    """
+    Build suspicious ring objects from valid cycles.
+    
+    Args:
+        valid_cycles: List of valid cycles (3-5 members)
+        G: NetworkX MultiDiGraph
+        
+    Returns:
+        List of SuspiciousRing objects
+    """
+    rings = []
+
+    for i, cycle in enumerate(valid_cycles, start=1):
+        metrics = calculate_ring_metrics(cycle, G)
+        
+        rings.append(SuspiciousRing(
+            ring_id=f"RING_{i:03}",
+            members=sorted(cycle),
+            pattern="cycle",
+            risk_score=metrics['risk_score'],
+            total_amount=metrics['total_amount'],
+            transaction_count=metrics['transaction_count']
+        ))
+
+    return rings
+
+
+def cycle_detector(G: nx.MultiDiGraph) -> List[SuspiciousRing]:
+    """
+    Main function to detect suspicious cycles/rings in the transaction graph.
+    
+    Args:
+        G: NetworkX MultiDiGraph
+        
+    Returns:
+        List of SuspiciousRing objects
+    """
+    cycles = detect_cycles(G)
+    valid_cycles = filter_valid_cycles(cycles)
+    return build_cycle_rings(valid_cycles, G)
+
+
 def create_transaction_maps(G: nx.MultiDiGraph) -> tuple[Dict[str, List[Dict]], Dict[str, List[Dict]]]:
     """
     Create outgoing and incoming transaction maps from the graph.
@@ -303,6 +447,134 @@ async def build_graph(file: UploadFile = File(...)) -> GraphAnalysisResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Graph building error: {str(e)}")
 
+@app.post("/detect-rings", response_model=RingDetectionResponse)
+async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetectionResponse:
+    """
+    Detect suspicious rings (cycles of 3-5 members) from uploaded CSV file.
+    
+    This endpoint analyzes the transaction network to identify potential money muling rings.
+    """
+    # First validate the CSV using existing upload functionality
+    csv_response = await upload_csv(file)
+    
+    if not csv_response.success:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"CSV validation failed: {csv_response.message}"
+        )
+    
+    try:
+        # Build the graph
+        G = build_transaction_graph(csv_response.valid_transactions)
+        
+        # Detect suspicious rings
+        suspicious_rings = cycle_detector(G)
+        
+        # Sort rings by risk score (highest first)
+        suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
+        
+        # Calculate graph statistics
+        graph_stats = {
+            "total_nodes": G.number_of_nodes(),
+            "total_edges": G.number_of_edges(),
+            "total_amount": sum(data['amount'] for _, _, data in G.edges(data=True)),
+            "rings_by_size": {
+                "3_member_rings": len([r for r in suspicious_rings if len(r.members) == 3]),
+                "4_member_rings": len([r for r in suspicious_rings if len(r.members) == 4]),
+                "5_member_rings": len([r for r in suspicious_rings if len(r.members) == 5])
+            },
+            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 5.0]),
+            "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings)
+        }
+        
+        return RingDetectionResponse(
+            success=True,
+            message=f"Detected {len(suspicious_rings)} suspicious rings from {G.number_of_nodes()} accounts",
+            total_rings=len(suspicious_rings),
+            suspicious_rings=suspicious_rings,
+            graph_stats=graph_stats
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ring detection error: {str(e)}")
+
+
+@app.get("/detect-rings/existing", response_model=RingDetectionResponse)
+async def detect_rings_from_existing_data() -> RingDetectionResponse:
+    """
+    Detect suspicious rings from existing transactions.csv file.
+    """
+    try:
+        import os
+        csv_file_path = os.path.join(os.path.dirname(__file__), "transactions.csv")
+        
+        if not os.path.exists(csv_file_path):
+            raise HTTPException(status_code=404, detail="transactions.csv file not found")
+        
+        # Load and validate CSV data
+        csv_data = pd.read_csv(csv_file_path)
+        
+        # Validate required columns
+        required_columns = {'transaction_id', 'sender_id', 'receiver_id', 'amount', 'timestamp'}
+        missing_columns = required_columns - set(csv_data.columns)
+        
+        if missing_columns:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Missing required columns: {', '.join(missing_columns)}"
+            )
+        
+        # Process transactions
+        valid_transactions = []
+        
+        for idx, row in csv_data.iterrows():
+            try:
+                transaction_data = {
+                    'transaction_id': str(row['transaction_id']).strip(),
+                    'sender_id': str(row['sender_id']).strip(),
+                    'receiver_id': str(row['receiver_id']).strip(),
+                    'amount': row['amount'],
+                    'timestamp': row['timestamp']
+                }
+                
+                transaction = Transaction(**transaction_data)
+                valid_transactions.append(transaction)
+                
+            except:
+                continue
+        
+        # Build graph and detect rings
+        G = build_transaction_graph(valid_transactions)
+        suspicious_rings = cycle_detector(G)
+        
+        # Sort rings by risk score (highest first)
+        suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
+        
+        # Calculate graph statistics
+        graph_stats = {
+            "total_nodes": G.number_of_nodes(),
+            "total_edges": G.number_of_edges(),
+            "total_amount": sum(data['amount'] for _, _, data in G.edges(data=True)),
+            "rings_by_size": {
+                "3_member_rings": len([r for r in suspicious_rings if len(r.members) == 3]),
+                "4_member_rings": len([r for r in suspicious_rings if len(r.members) == 4]),
+                "5_member_rings": len([r for r in suspicious_rings if len(r.members) == 5])
+            },
+            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 5.0]),
+            "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
+            "average_ring_risk": sum(r.risk_score or 0 for r in suspicious_rings) / len(suspicious_rings) if suspicious_rings else 0
+        }
+        
+        return RingDetectionResponse(
+            success=True,
+            message=f"Detected {len(suspicious_rings)} suspicious rings from existing data ({G.number_of_nodes()} accounts, {G.number_of_edges()} transactions)",
+            total_rings=len(suspicious_rings),
+            suspicious_rings=suspicious_rings,
+            graph_stats=graph_stats
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ring detection error: {str(e)}")
 
 @app.get("/analyze-existing-data", response_model=GraphAnalysisResponse)
 async def analyze_existing_data() -> GraphAnalysisResponse:

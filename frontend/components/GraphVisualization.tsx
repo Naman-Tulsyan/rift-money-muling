@@ -20,8 +20,18 @@ interface GraphData {
   edges: GraphEdge[];
 }
 
+interface SuspiciousRing {
+  ring_id: string;
+  members: Array<string>;
+  pattern: string;
+  risk_score?: number;
+  total_amount?: number;
+  transaction_count?: number;
+}
+
 interface GraphVisualizationProps {
   graphData: GraphData;
+  suspiciousRings?: Array<SuspiciousRing>;
   stats?: {
     nodes_count: number;
     edges_count: number;
@@ -33,10 +43,12 @@ interface GraphVisualizationProps {
 export default function GraphVisualization({
   graphData,
   stats,
+  suspiciousRings,
 }: GraphVisualizationProps) {
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<Core | null>(null);
   const [selectedElement, setSelectedElement] = useState<any>(null);
+  const [highlightRings, setHighlightRings] = useState(false);
   const [layoutType, setLayoutType] = useState<
     "cose" | "circle" | "grid" | "breadthfirst"
   >("cose");
@@ -44,9 +56,28 @@ export default function GraphVisualization({
   useEffect(() => {
     if (!cyRef.current || !graphData) return;
 
+    // Create sets of ring members for easy lookup
+    const ringMembers = new Set<string>();
+    const highRiskMembers = new Set<string>();
+
+    if (suspiciousRings) {
+      suspiciousRings.forEach((ring) => {
+        ring.members.forEach((member) => {
+          ringMembers.add(member);
+          if ((ring.risk_score || 0) > 5.0) {
+            highRiskMembers.add(member);
+          }
+        });
+      });
+    }
+
     // Prepare nodes and edges for Cytoscape
     const nodes: NodeDefinition[] = graphData.nodes.map((node) => ({
-      data: { id: node.id },
+      data: {
+        id: node.id,
+        isRingMember: ringMembers.has(node.id),
+        isHighRisk: highRiskMembers.has(node.id),
+      },
     }));
 
     const edges: EdgeDefinition[] = graphData.edges.map((edge) => ({
@@ -57,6 +88,8 @@ export default function GraphVisualization({
         amount: edge.amount,
         timestamp: edge.timestamp,
         weight: Math.log10(edge.amount + 1), // For edge thickness
+        isRingEdge:
+          ringMembers.has(edge.source) && ringMembers.has(edge.target),
       },
     }));
 
@@ -112,6 +145,31 @@ export default function GraphVisualization({
             opacity: 1,
           },
         },
+        {
+          selector: "node[isRingMember]",
+          style: {
+            "background-color": "#F59E0B",
+            "border-color": "#D97706",
+            "border-width": "3px",
+          },
+        },
+        {
+          selector: "node[isHighRisk]",
+          style: {
+            "background-color": "#EF4444",
+            "border-color": "#DC2626",
+            "border-width": "4px",
+          },
+        },
+        {
+          selector: "edge[isRingEdge]",
+          style: {
+            "line-color": "#F59E0B",
+            "target-arrow-color": "#F59E0B",
+            width: "mapData(weight, 0, 6, 2, 10)",
+            opacity: 1,
+          },
+        },
       ],
       layout: {
         name: layoutType,
@@ -146,10 +204,60 @@ export default function GraphVisualization({
       }
     });
 
+    // Update ring highlighting based on toggle
+    const updateRingHighlighting = () => {
+      if (highlightRings && suspiciousRings && suspiciousRings.length > 0) {
+        cyInstance.current?.nodes().forEach((node: any) => {
+          const nodeId = node.data("id");
+          const isInRing = suspiciousRings.some((ring: any) =>
+            ring.members.includes(nodeId),
+          );
+
+          if (isInRing) {
+            node.data("isRingMember", true);
+            // Check if it's in a high-risk ring
+            const isHighRisk = suspiciousRings.some(
+              (ring: any) =>
+                ring.members.includes(nodeId) &&
+                ring.risk_score &&
+                ring.risk_score > 0.7,
+            );
+            node.data("isHighRisk", isHighRisk);
+          } else {
+            node.data("isRingMember", false);
+            node.data("isHighRisk", false);
+          }
+        });
+
+        // Update edges that are part of rings
+        cyInstance.current?.edges().forEach((edge: any) => {
+          const sourceId = edge.source().id();
+          const targetId = edge.target().id();
+          const isRingEdge = suspiciousRings.some(
+            (ring: any) =>
+              ring.members.includes(sourceId) &&
+              ring.members.includes(targetId),
+          );
+          edge.data("isRingEdge", isRingEdge);
+        });
+      } else {
+        // Remove highlighting
+        cyInstance.current?.nodes().forEach((node: any) => {
+          node.data("isRingMember", false);
+          node.data("isHighRisk", false);
+        });
+        cyInstance.current?.edges().forEach((edge: any) => {
+          edge.data("isRingEdge", false);
+        });
+      }
+    };
+
+    updateRingHighlighting();
+
     return () => {
       cyInstance.current?.destroy();
     };
-  }, [graphData, layoutType]);
+  }, [graphData, layoutType, suspiciousRings, highlightRings]);
 
   const handleLayoutChange = (newLayout: typeof layoutType) => {
     setLayoutType(newLayout);
@@ -215,8 +323,47 @@ export default function GraphVisualization({
         </div>
       )}
 
+      {/* Rings Summary Panel */}
+      {suspiciousRings && suspiciousRings.length > 0 && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <h4 className="font-semibold text-red-800 mb-3 flex items-center">
+            🚨 Suspicious Rings Detected ({suspiciousRings.length})
+          </h4>
+          <div className="grid gap-3">
+            {suspiciousRings.map((ring, index) => (
+              <div
+                key={index}
+                className="bg-white p-3 rounded border border-red-200"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="font-medium text-red-700">
+                      Ring {index + 1}
+                    </span>
+                    <div className="text-sm text-red-600">
+                      {ring.members.length} members
+                      {ring.risk_score
+                        ? ` • Risk: ${(ring.risk_score * 100).toFixed(1)}%`
+                        : ""}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Members: {ring.members.join(", ")}
+                    </div>
+                  </div>
+                  {ring.risk_score && ring.risk_score > 0.8 && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
+                      HIGH RISK
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Layout Controls */}
-      <div className="flex gap-2 mb-4 flex-wrap">
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
         <span className="text-sm font-medium text-gray-700 flex items-center">
           Layout:
         </span>
@@ -233,6 +380,23 @@ export default function GraphVisualization({
             {layout.charAt(0).toUpperCase() + layout.slice(1)}
           </button>
         ))}
+
+        {suspiciousRings && suspiciousRings.length > 0 && (
+          <>
+            <span className="text-gray-400 mx-2">|</span>
+            <button
+              onClick={() => setHighlightRings(!highlightRings)}
+              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                highlightRings
+                  ? "bg-red-600 text-white"
+                  : "bg-red-100 hover:bg-red-200 text-red-700"
+              }`}
+            >
+              🚨 {highlightRings ? "Hide" : "Show"} Rings (
+              {suspiciousRings.length})
+            </button>
+          </>
+        )}
       </div>
 
       <div className="flex gap-4">
@@ -260,6 +424,31 @@ export default function GraphVisualization({
                   <span className="font-medium text-gray-700">Account ID:</span>
                   <div className="text-gray-900">{selectedElement.id}</div>
                 </div>
+
+                {/* Ring Information */}
+                {suspiciousRings && suspiciousRings.length > 0 && (
+                  <div>
+                    {suspiciousRings
+                      .filter((ring) =>
+                        ring.members.includes(selectedElement.id),
+                      )
+                      .map((ring, index) => (
+                        <div key={index} className="bg-red-50 p-2 rounded mt-2">
+                          <span className="font-medium text-red-700">
+                            🚨 Suspicious Ring {index + 1}
+                          </span>
+                          {ring.risk_score && (
+                            <div className="text-sm text-red-600">
+                              Risk Score: {(ring.risk_score * 100).toFixed(1)}%
+                            </div>
+                          )}
+                          <div className="text-sm text-red-600">
+                            Members: {ring.members.length}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

@@ -48,13 +48,44 @@ interface GraphResponse {
   };
 }
 
+interface SuspiciousRing {
+  ring_id: string;
+  members: Array<string>;
+  pattern: string;
+  risk_score?: number;
+  total_amount?: number;
+  transaction_count?: number;
+}
+
+interface RingDetectionResponse {
+  success: boolean;
+  message: string;
+  total_rings: number;
+  suspicious_rings: Array<SuspiciousRing>;
+  graph_stats: {
+    total_nodes: number;
+    total_edges: number;
+    total_amount: number;
+    rings_by_size: {
+      "3_member_rings": number;
+      "4_member_rings": number;
+      "5_member_rings": number;
+    };
+    high_risk_rings: number;
+    total_ring_amount: number;
+    average_ring_risk?: number;
+  };
+}
+
 export default function CSVUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<UploadResponse | null>(null);
   const [graphData, setGraphData] = useState<GraphResponse | null>(null);
+  const [ringData, setRingData] = useState<RingDetectionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
+  const [showRings, setShowRings] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,7 +94,9 @@ export default function CSVUpload() {
       setFile(selectedFile);
       setResponse(null);
       setGraphData(null);
+      setRingData(null);
       setShowGraph(false);
+      setShowRings(false);
       setError(null);
     }
   };
@@ -94,6 +127,7 @@ export default function CSVUpload() {
       // If upload was successful, also fetch graph data
       if (result.success && result.valid_transactions.length > 0) {
         await fetchGraphData();
+        await fetchRingData();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -123,17 +157,47 @@ export default function CSVUpload() {
     }
   };
 
+  const fetchRingData = async () => {
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("http://localhost:8000/detect-rings", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const ringResult: RingDetectionResponse = await res.json();
+        setRingData(ringResult);
+      }
+    } catch (err) {
+      console.error("Failed to fetch ring data:", err);
+    }
+  };
+
   const loadExistingGraphData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/graph-data/existing");
+      const [graphRes, ringRes] = await Promise.all([
+        fetch("http://localhost:8000/graph-data/existing"),
+        fetch("http://localhost:8000/detect-rings/existing"),
+      ]);
 
-      if (res.ok) {
-        const graphResult: GraphResponse = await res.json();
+      if (graphRes.ok) {
+        const graphResult: GraphResponse = await graphRes.json();
         setGraphData(graphResult);
         setShowGraph(true);
+      }
+
+      if (ringRes.ok) {
+        const ringResult: RingDetectionResponse = await ringRes.json();
+        setRingData(ringResult);
+        setShowRings(ringResult.total_rings > 0);
       } else {
-        throw new Error("Failed to load existing graph data");
+        throw new Error("Failed to load existing data");
       }
     } catch (err) {
       setError(
@@ -148,7 +212,9 @@ export default function CSVUpload() {
     setFile(null);
     setResponse(null);
     setGraphData(null);
+    setRingData(null);
     setShowGraph(false);
+    setShowRings(false);
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -246,8 +312,173 @@ export default function CSVUpload() {
             <GraphVisualization
               graphData={graphData.graph}
               stats={graphData.stats}
+              suspiciousRings={ringData?.suspicious_rings}
             />
           )}
+        </div>
+      )}
+
+      {ringData && (
+        <div className="space-y-4">
+          <div
+            className={`p-4 rounded-md ${
+              ringData.total_rings > 0
+                ? "bg-red-50 border border-red-200"
+                : "bg-green-50 border border-green-200"
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3
+                  className={`text-lg font-medium ${
+                    ringData.total_rings > 0 ? "text-red-800" : "text-green-800"
+                  }`}
+                >
+                  {ringData.total_rings > 0
+                    ? "🚨 Suspicious Rings Detected!"
+                    : "✅ No Suspicious Rings"}
+                </h3>
+                <p
+                  className={`text-sm ${
+                    ringData.total_rings > 0 ? "text-red-700" : "text-green-700"
+                  }`}
+                >
+                  {ringData.message}
+                </p>
+              </div>
+              {ringData.total_rings > 0 && (
+                <button
+                  onClick={() => setShowRings(!showRings)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
+                  {showRings ? "🔍 Hide Details" : "🔍 View Details"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {showRings && ringData.total_rings > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4">
+                🎯 Suspicious Ring Analysis
+              </h4>
+
+              {/* Ring Statistics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {ringData.total_rings}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Rings</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {ringData.graph_stats.high_risk_rings}
+                  </div>
+                  <div className="text-sm text-gray-600">High Risk</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    ${ringData.graph_stats.total_ring_amount.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-gray-600">Ring Amount</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {ringData.graph_stats.average_ring_risk?.toFixed(2) ||
+                      "0.00"}
+                  </div>
+                  <div className="text-sm text-gray-600">Avg Risk Score</div>
+                </div>
+              </div>
+
+              {/* Ring Details */}
+              <div className="space-y-4">
+                <h5 className="font-medium text-gray-900 mb-3">
+                  🔍 Detected Rings (Top 10)
+                </h5>
+                {ringData.suspicious_rings.slice(0, 10).map((ring, index) => (
+                  <div
+                    key={ring.ring_id}
+                    className={`p-4 rounded-lg border ${
+                      (ring.risk_score || 0) > 5.0
+                        ? "border-red-200 bg-red-50"
+                        : "border-yellow-200 bg-yellow-50"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h6 className="font-medium text-gray-900">
+                          {ring.ring_id} - {ring.members.length} Members
+                        </h6>
+                        <p className="text-sm text-gray-600 mt-1">
+                          <strong>Members:</strong> {ring.members.join(" → ")} →{" "}
+                          {ring.members[0]}
+                        </p>
+                        <div className="flex gap-4 mt-2 text-sm">
+                          <span className="text-gray-700">
+                            <strong>Risk Score:</strong>
+                            <span
+                              className={`ml-1 font-medium ${
+                                (ring.risk_score || 0) > 5.0
+                                  ? "text-red-600"
+                                  : "text-yellow-600"
+                              }`}
+                            >
+                              {ring.risk_score?.toFixed(2) || "0.00"}
+                            </span>
+                          </span>
+                          <span className="text-gray-700">
+                            <strong>Amount:</strong> $
+                            {ring.total_amount?.toLocaleString() || "0"}
+                          </span>
+                          <span className="text-gray-700">
+                            <strong>Transactions:</strong>{" "}
+                            {ring.transaction_count || 0}
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          (ring.risk_score || 0) > 5.0
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {(ring.risk_score || 0) > 5.0
+                          ? "HIGH RISK"
+                          : "MODERATE"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {ringData.suspicious_rings.length > 10 && (
+                  <p className="text-sm text-gray-500 text-center mt-4">
+                    Showing top 10 of {ringData.suspicious_rings.length}{" "}
+                    detected rings
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {showGraph && !response && graphData && (
+        <GraphVisualization
+          graphData={graphData.graph}
+          stats={graphData.stats}
+          suspiciousRings={ringData?.suspicious_rings}
+        />
+      )}
+
+      {showRings && !response && ringData && ringData.total_rings > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">
+            🎯 Existing Data Ring Analysis
+          </h4>
+          <p className="text-gray-600 mb-4">{ringData.message}</p>
         </div>
       )}
 
