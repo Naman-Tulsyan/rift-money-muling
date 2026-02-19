@@ -11,7 +11,7 @@ import os
 import random
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import Dict, List, Set, Tuple
 
 import pandas as pd
 
@@ -105,16 +105,17 @@ def generate_normal_transactions(
 def generate_cycle_fraud(
     accounts: List[str],
     num_cycles: int = NUM_CYCLES,
-) -> List[dict]:
+) -> Tuple[List[dict], Set[str]]:
     """
     Create *num_cycles* cycles of length 3-5.
-    Example cycle:  A1 → A2 → A3 → A1
-    Uses similar amounts and close timestamps per cycle.
+    Returns (transactions, fraud_account_ids).
     """
     transactions: List[dict] = []
+    fraud_accounts: Set[str] = set()
     for _ in range(num_cycles):
         cycle_len = random.randint(3, 5)
         cycle_accounts = random.sample(accounts, cycle_len)
+        fraud_accounts.update(cycle_accounts)
 
         base_amount = round(random.uniform(500, 10_000), 2)
         base_time = _random_timestamp()
@@ -132,7 +133,7 @@ def generate_cycle_fraud(
                 "amount": amount,
                 "timestamp": stamps[i],
             })
-    return transactions
+    return transactions, fraud_accounts
 
 
 # ──────────────────────────────────────────────
@@ -142,15 +143,16 @@ def generate_cycle_fraud(
 def generate_smurfing_fraud(
     accounts: List[str],
     num_groups: int = NUM_SMURFING_GROUPS,
-) -> List[dict]:
+) -> Tuple[List[dict], Set[str]]:
     """
     For each group create:
       • Fan-in:  10-15 senders → 1 receiver within 24 h
       • Fan-out: 1 sender  → 10-15 receivers within 24 h
 
-    Uses small, consistent amounts per group.
+    Returns (transactions, fraud_account_ids).
     """
     transactions: List[dict] = []
+    fraud_accounts: Set[str] = set()
 
     for _ in range(num_groups):
         # ---- Fan-in ----
@@ -158,6 +160,8 @@ def generate_smurfing_fraud(
         participants = random.sample(accounts, fan_in_count + 1)
         hub = participants[0]
         senders = participants[1:]
+        fraud_accounts.add(hub)
+        fraud_accounts.update(senders)
 
         base_amount = round(random.uniform(200, 3_000), 2)
         base_time = _random_timestamp()
@@ -178,6 +182,8 @@ def generate_smurfing_fraud(
         recipients = random.sample(accounts, fan_out_count + 1)
         hub_out = recipients[0]
         receivers = recipients[1:]
+        fraud_accounts.add(hub_out)
+        fraud_accounts.update(receivers)
 
         base_amount = round(random.uniform(200, 3_000), 2)
         base_time = _random_timestamp()
@@ -193,7 +199,7 @@ def generate_smurfing_fraud(
                 "timestamp": stamps[idx],
             })
 
-    return transactions
+    return transactions, fraud_accounts
 
 
 # ──────────────────────────────────────────────
@@ -203,20 +209,18 @@ def generate_smurfing_fraud(
 def generate_layered_fraud(
     accounts: List[str],
     num_chains: int = NUM_LAYERED_CHAINS,
-) -> List[dict]:
+) -> Tuple[List[dict], Set[str]]:
     """
     Create *num_chains* layered chains of 4-6 accounts.
-    A1 → A2 → A3 → A4 (→ A5 → A6)
-
-    Intermediate nodes have only 2-3 transactions total,
-    so we add 1-2 small "noise" transactions per intermediate.
+    Returns (transactions, fraud_account_ids).
     """
     transactions: List[dict] = []
+    fraud_accounts: Set[str] = set()
 
     for _ in range(num_chains):
         chain_len = random.randint(4, 6)
         chain_accounts = random.sample(accounts, chain_len)
-
+        fraud_accounts.update(chain_accounts)
         base_amount = round(random.uniform(1_000, 15_000), 2)
         base_time = _random_timestamp()
 
@@ -264,27 +268,27 @@ def generate_layered_fraud(
                         "timestamp": ts,
                     })
 
-    return transactions
+    return transactions, fraud_accounts
 
 
 # ──────────────────────────────────────────────
 #  4. Build & save
 # ──────────────────────────────────────────────
 
-def build_dataset() -> pd.DataFrame:
+def build_dataset() -> Tuple[pd.DataFrame, Dict[str, dict]]:
     """
     Assemble the full dataset:
     1. Generate accounts
     2. Generate normal + fraud transactions
     3. Combine, sort by timestamp, return DataFrame
+    4. Return fraud metadata per account
     """
     accounts = generate_accounts()
 
-    # Budget calculation
-    # Estimate fraud txns first, then fill the rest with normal
-    cycle_txns = generate_cycle_fraud(accounts)
-    smurfing_txns = generate_smurfing_fraud(accounts)
-    layered_txns = generate_layered_fraud(accounts)
+    # Generate fraud txns and track involved accounts
+    cycle_txns, cycle_accts = generate_cycle_fraud(accounts)
+    smurfing_txns, smurf_accts = generate_smurfing_fraud(accounts)
+    layered_txns, layer_accts = generate_layered_fraud(accounts)
 
     fraud_count = len(cycle_txns) + len(smurfing_txns) + len(layered_txns)
     normal_count = max(TOTAL_TRANSACTIONS - fraud_count, 0)
@@ -297,7 +301,18 @@ def build_dataset() -> pd.DataFrame:
     df.sort_values("timestamp", inplace=True)
     df.reset_index(drop=True, inplace=True)
 
-    return df
+    # Build per-account fraud metadata
+    fraud_meta: Dict[str, dict] = {}
+    all_fraud = cycle_accts | smurf_accts | layer_accts
+    for acct in accounts:
+        fraud_meta[acct] = {
+            "is_fraud": acct in all_fraud,
+            "in_cycle": acct in cycle_accts,
+            "in_smurfing": acct in smurf_accts,
+            "in_layering": acct in layer_accts,
+        }
+
+    return df, fraud_meta
 
 
 def save_to_csv(df: pd.DataFrame, path: str | None = None) -> str:
@@ -316,15 +331,34 @@ def save_to_csv(df: pd.DataFrame, path: str | None = None) -> str:
 
 def main():
     print("🔧 Generating synthetic transaction dataset …")
-    df = build_dataset()
+    df, fraud_meta = build_dataset()
 
-    fraud_approx = len(df) - int(TOTAL_TRANSACTIONS * NORMAL_RATIO)
+    fraud_count = sum(1 for v in fraud_meta.values() if v["is_fraud"])
     print(f"   Total transactions : {len(df):,}")
-    print(f"   Normal (approx)    : {len(df) - fraud_approx:,}")
-    print(f"   Fraud  (approx)    : {fraud_approx:,}")
+    print(f"   Total accounts     : {len(fraud_meta):,}")
+    print(f"   Fraud accounts     : {fraud_count:,}")
+    print(f"   Clean accounts     : {len(fraud_meta) - fraud_count:,}")
 
     saved = save_to_csv(df)
-    print(f"✅ Saved to {saved}")
+    print(f"✅ Transactions saved to {saved}")
+
+    # Also save fraud labels for downstream use
+    labels_path = os.path.join(
+        os.path.dirname(__file__), "..", "data", "fraud_labels.csv"
+    )
+    labels_path = os.path.abspath(labels_path)
+    labels_df = pd.DataFrame([
+        {
+            "account_id": acct,
+            "label": 1 if meta["is_fraud"] else 0,
+            "in_cycle": 1 if meta["in_cycle"] else 0,
+            "in_smurfing": 1 if meta["in_smurfing"] else 0,
+            "in_layering": 1 if meta["in_layering"] else 0,
+        }
+        for acct, meta in sorted(fraud_meta.items())
+    ])
+    labels_df.to_csv(labels_path, index=False)
+    print(f"✅ Fraud labels saved to {labels_path}")
 
 
 if __name__ == "__main__":

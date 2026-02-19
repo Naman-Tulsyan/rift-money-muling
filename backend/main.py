@@ -12,6 +12,11 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, validator
 
 from services.json_formatter import build_final_json
+from ml.predictor import (
+    is_available as ml_is_available,
+    predict_fraud_probabilities,
+    compute_final_scores,
+)
 
 app = FastAPI(title="Rift Money Muling API", version="0.1.0")
 
@@ -1075,6 +1080,81 @@ def build_final_account_list(
     return result
 
 
+def _extract_pipeline_features(
+    G: nx.MultiDiGraph,
+    fraud_rings: List[SuspiciousRing],
+) -> List[Dict[str, Any]]:
+    """
+    Extract per-account features from the pipeline graph and fraud rings,
+    formatted for the ML predictor.
+
+    Returns a list of feature dicts (one per account) with keys matching
+    the training schema.
+    """
+    metrics = compute_transaction_metrics(G)
+
+    # Derive pattern-level flags from fraud rings
+    smurfing_accounts: set[str] = set()
+    cycle_accounts: Dict[str, int] = {}      # account → cycle count
+    layering_accounts: Dict[str, int] = {}    # account → depth estimate
+    ring_members: Dict[str, int] = {}         # account → largest ring size
+
+    for ring in fraud_rings:
+        members = ring.members
+        size = len(members)
+        for m in members:
+            ring_members[m] = max(ring_members.get(m, 0), size)
+
+        if ring.pattern == "cycle":
+            for m in members:
+                cycle_accounts[m] = cycle_accounts.get(m, 0) + 1
+        elif ring.pattern in ("smurfing_fan_in", "smurfing_fan_out"):
+            for m in members:
+                smurfing_accounts.add(m)
+        elif ring.pattern == "layered":
+            depth = len(members) - 1
+            for m in members:
+                layering_accounts[m] = max(layering_accounts.get(m, 0), depth)
+
+    # Compute total_amount_sent and avg per node
+    sent_stats: Dict[str, Dict[str, float]] = {}
+    for u, v, data in G.edges(data=True):
+        s = sent_stats.setdefault(u, {"total": 0.0, "count": 0})
+        s["total"] += data.get("amount", 0.0)
+        s["count"] += 1
+
+    # Unique receivers / senders per node
+    unique_receivers: Dict[str, set] = {}
+    unique_senders: Dict[str, set] = {}
+    for u, v, _data in G.edges(data=True):
+        unique_receivers.setdefault(u, set()).add(v)
+        unique_senders.setdefault(v, set()).add(u)
+
+    features: List[Dict[str, Any]] = []
+    for node in sorted(G.nodes()):
+        m = metrics.get(node, {})
+        s = sent_stats.get(node, {"total": 0.0, "count": 0})
+        total_sent = s["total"]
+        sent_count = s["count"]
+        avg_amount = (total_sent / sent_count) if sent_count > 0 else 0.0
+
+        features.append({
+            "account_id": node,
+            "total_transactions": m.get("total_transactions", 0),
+            "total_amount_sent": round(total_sent, 2),
+            "avg_transaction_amount": round(avg_amount, 2),
+            "unique_receivers": len(unique_receivers.get(node, set())),
+            "unique_senders": len(unique_senders.get(node, set())),
+            "max_transactions_per_hour": m.get("max_tx_per_hour", 0),
+            "smurfing_flag": 1 if node in smurfing_accounts else 0,
+            "layering_depth": layering_accounts.get(node, 0),
+            "cycle_count": cycle_accounts.get(node, 0),
+            "ring_size": ring_members.get(node, 0),
+            "merchant_flag": 1 if m.get("is_merchant", False) else 0,
+        })
+    return features
+
+
 def compute_suspicion_scores(
     G: nx.MultiDiGraph,
     fraud_rings: List[SuspiciousRing],
@@ -1625,7 +1705,7 @@ def _run_pipeline(transactions: List["Transaction"]) -> Dict[str, Any]:
     layered_rings_list = detect_layered_networks(G, incoming_map, outgoing_map)
     fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings_list)
 
-    # 3. Compute suspicion scores
+    # 3. Compute rule-based suspicion scores
     suspicious_accounts = compute_suspicion_scores(G, fraud_rings)
 
     # 4. Prepare data for the JSON formatter
@@ -1640,10 +1720,27 @@ def _run_pipeline(transactions: List["Transaction"]) -> Dict[str, Any]:
         for r in fraud_rings
     ]
 
-    # account_scores: account_id → suspicion_score
-    account_scores: Dict[str, int] = {
+    # Rule-based scores: account_id → suspicion_score (0-100)
+    rule_scores: Dict[str, int] = {
         sa.account_id: sa.suspicion_score for sa in suspicious_accounts
     }
+
+    # 4b. ML-enhanced scoring (if model is available)
+    ml_probabilities: Dict[str, float] = {}
+    final_scores_detail: Dict[str, Dict[str, float]] = {}
+
+    if ml_is_available():
+        account_features = _extract_pipeline_features(G, fraud_rings)
+        ml_probabilities = predict_fraud_probabilities(account_features)
+        final_scores_detail = compute_final_scores(rule_scores, ml_probabilities)
+        # Use blended final_score for the report
+        account_scores: Dict[str, int] = {
+            acct: int(round(detail["final_score"]))
+            for acct, detail in final_scores_detail.items()
+        }
+    else:
+        # Fallback: use rule scores only
+        account_scores = dict(rule_scores)
 
     # account_ring_map: account_id → first (highest-risk) ring_id or None
     acct_ring_membership = build_account_ring_map(fraud_rings)
@@ -1661,6 +1758,8 @@ def _run_pipeline(transactions: List["Transaction"]) -> Dict[str, Any]:
         account_scores=account_scores,
         account_ring_map=account_ring_map,
         processing_time_seconds=t_end - t_start,
+        ml_probabilities=ml_probabilities,
+        rule_scores=rule_scores,
     )
     return report
 

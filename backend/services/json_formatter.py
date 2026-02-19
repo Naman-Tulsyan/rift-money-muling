@@ -69,25 +69,38 @@ def format_fraud_rings(
 def format_suspicious_accounts(
     account_scores: Dict[str, int],
     account_ring_map: Dict[str, Optional[str]],
+    ml_probabilities: Optional[Dict[str, float]] = None,
+    rule_scores: Optional[Dict[str, int]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Format and sort suspicious accounts for the final report.
 
     Args:
-        account_scores:   account_id → suspicion_score (int, 0-100)
+        account_scores:   account_id → final suspicion_score (int, 0-100).
+                          When ML is enabled this is the blended score.
         account_ring_map: account_id → ring_id (str) or None
+        ml_probabilities: account_id → fraud probability (0-1), optional.
+        rule_scores:      account_id → rule-based score (0-100), optional.
 
     Returns a new list sorted by suspicion_score DESC, then account_id ASC.
     """
+    ml_probs = ml_probabilities or {}
+    rules = rule_scores or {}
+
     accounts: List[Dict[str, Any]] = []
     for account_id, score in account_scores.items():
         clamped = max(0, min(100, int(score)))
-        accounts.append({
+        entry: Dict[str, Any] = {
             "account_id": account_id,
             "suspicion_score": clamped,
             "risk_level": _risk_level(clamped),
             "associated_ring": account_ring_map.get(account_id),
-        })
+        }
+        # Include ML detail when available
+        if ml_probs:
+            entry["rule_score"] = int(rules.get(account_id, 0))
+            entry["ml_probability"] = round(ml_probs.get(account_id, 0.0), 6)
+        accounts.append(entry)
 
     # Primary: score DESC, secondary: account_id ASC (deterministic)
     accounts.sort(key=lambda a: (-a["suspicion_score"], a["account_id"]))
@@ -100,6 +113,8 @@ def build_final_json(
     account_scores: Dict[str, int],
     account_ring_map: Dict[str, Optional[str]],
     processing_time_seconds: float,
+    ml_probabilities: Optional[Dict[str, float]] = None,
+    rule_scores: Optional[Dict[str, int]] = None,
 ) -> Dict[str, Any]:
     """
     Assemble the complete fraud detection report.
@@ -107,15 +122,21 @@ def build_final_json(
     Args:
         transactions:            list of Transaction objects (used for counts).
         fraud_rings:             list of ring dicts (ring_id, pattern, members, risk_score).
-        account_scores:          account_id → suspicion_score.
+        account_scores:          account_id → final suspicion_score (blended when ML is active).
         account_ring_map:        account_id → ring_id or None.
         processing_time_seconds: elapsed wall-clock time for the pipeline.
+        ml_probabilities:        account_id → ML fraud probability (0-1), optional.
+        rule_scores:             account_id → rule-based score (0-100), optional.
 
     Returns the full report dict matching the required JSON schema.
     The report is also persisted to ``output/latest_report.json``.
     """
     formatted_rings = format_fraud_rings(fraud_rings)
-    formatted_accounts = format_suspicious_accounts(account_scores, account_ring_map)
+    formatted_accounts = format_suspicious_accounts(
+        account_scores, account_ring_map,
+        ml_probabilities=ml_probabilities,
+        rule_scores=rule_scores,
+    )
 
     # Derive unique account IDs from transactions
     all_accounts: set[str] = set()
@@ -129,6 +150,7 @@ def build_final_json(
             "total_transactions": len(transactions),
             "fraud_rings_detected": len(formatted_rings),
             "suspicious_accounts_count": len(formatted_accounts),
+            "ml_model_active": bool(ml_probabilities),
             "processing_time_seconds": round(processing_time_seconds, 4),
         },
         "fraud_rings": formatted_rings,
