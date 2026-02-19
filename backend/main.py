@@ -28,7 +28,8 @@ if not ALLOWED_ORIGINS or ALLOWED_ORIGINS == [""]:
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://rift-money-muling-zqd4.vercel.app",
-        "https://rift-money-muling-zqd4.vercel.app/"
+        "https://rift-money-muling-zqd4.vercel.app/",
+        "rift-money-muling-zqd4-7puib5lq4-pynamans-projects.vercel.app",
     ]
 
 # Add CORS middleware for frontend integration
