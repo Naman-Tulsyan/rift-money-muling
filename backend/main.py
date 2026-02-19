@@ -191,6 +191,31 @@ def build_transaction_graph(transactions: List[Transaction]) -> nx.MultiDiGraph:
     return G
 
 
+def graph_to_json(G: nx.MultiDiGraph) -> Dict[str, Any]:
+    """
+    Convert NetworkX graph to JSON format for Cytoscape.js visualization.
+    
+    Args:
+        G: NetworkX MultiDiGraph
+        
+    Returns:
+        Dictionary with nodes and edges in Cytoscape.js format
+    """
+    nodes = [{"id": node} for node in G.nodes()]
+    
+    edges = []
+    for u, v, key, data in G.edges(keys=True, data=True):
+        edges.append({
+            "id": data["tx_id"],
+            "source": u,
+            "target": v,
+            "amount": data["amount"],
+            "timestamp": data["timestamp"].isoformat() if hasattr(data["timestamp"], 'isoformat') else str(data["timestamp"])
+        })
+    
+    return {"nodes": nodes, "edges": edges}
+
+
 def create_transaction_maps(G: nx.MultiDiGraph) -> tuple[Dict[str, List[Dict]], Dict[str, List[Dict]]]:
     """
     Create outgoing and incoming transaction maps from the graph.
@@ -374,6 +399,95 @@ async def analyze_existing_data() -> GraphAnalysisResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
 
+@app.post("/graph-data")
+async def get_graph_data(file: UploadFile = File(...)) -> Dict[str, Any]:
+    """
+    Upload CSV and return graph data in Cytoscape.js format for visualization.
+    
+    Returns nodes and edges in the format required by Cytoscape.js
+    """
+    # First validate the CSV using existing upload functionality
+    csv_response = await upload_csv(file)
+    
+    if not csv_response.success:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"CSV validation failed: {csv_response.message}"
+        )
+    
+    try:
+        # Build the graph
+        G = build_transaction_graph(csv_response.valid_transactions)
+        
+        # Convert to Cytoscape.js format
+        graph_json = graph_to_json(G)
+        
+        return {
+            "success": True,
+            "message": f"Graph data generated for {G.number_of_nodes()} nodes and {G.number_of_edges()} edges",
+            "graph": graph_json,
+            "stats": {
+                "nodes_count": G.number_of_nodes(),
+                "edges_count": G.number_of_edges(),
+                "total_amount": sum(data['amount'] for _, _, data in G.edges(data=True)),
+                "unique_accounts": G.number_of_nodes()
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Graph generation error: {str(e)}")
+
+
+@app.get("/graph-data/existing")
+async def get_existing_graph_data() -> Dict[str, Any]:
+    """
+    Generate graph data from existing transactions.csv for visualization.
+    """
+    try:
+        import os
+        csv_file_path = os.path.join(os.path.dirname(__file__), "transactions.csv")
+        
+        if not os.path.exists(csv_file_path):
+            raise HTTPException(status_code=404, detail="transactions.csv file not found")
+        
+        # Use existing analysis function to process the data
+        analysis_response = await analyze_existing_data()
+        
+        # Load CSV again to build graph (we could optimize this)
+        csv_data = pd.read_csv(csv_file_path)
+        valid_transactions = []
+        
+        for idx, row in csv_data.iterrows():
+            try:
+                transaction = Transaction(
+                    transaction_id=str(row['transaction_id']).strip(),
+                    sender_id=str(row['sender_id']).strip(),
+                    receiver_id=str(row['receiver_id']).strip(),
+                    amount=row['amount'],
+                    timestamp=row['timestamp']
+                )
+                valid_transactions.append(transaction)
+            except:
+                continue
+        
+        # Build graph and convert to JSON
+        G = build_transaction_graph(valid_transactions)
+        graph_json = graph_to_json(G)
+        
+        return {
+            "success": True,
+            "message": f"Graph data generated from existing CSV with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges",
+            "graph": graph_json,
+            "stats": {
+                "nodes_count": G.number_of_nodes(),
+                "edges_count": G.number_of_edges(),
+                "total_amount": sum(data['amount'] for _, _, data in G.edges(data=True)),
+                "unique_accounts": G.number_of_nodes()
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Graph generation error: {str(e)}")
 
 @app.get("/transactions/sample")
 def get_sample_csv() -> dict:

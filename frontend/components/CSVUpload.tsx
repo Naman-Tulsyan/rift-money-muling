@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import GraphVisualization from "./GraphVisualization";
 
 interface Transaction {
   transaction_id: string;
@@ -24,11 +25,36 @@ interface UploadResponse {
   errors: ValidationError[];
 }
 
+interface GraphData {
+  nodes: Array<{ id: string }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    amount: number;
+    timestamp: string;
+  }>;
+}
+
+interface GraphResponse {
+  success: boolean;
+  message: string;
+  graph: GraphData;
+  stats: {
+    nodes_count: number;
+    edges_count: number;
+    total_amount: number;
+    unique_accounts: number;
+  };
+}
+
 export default function CSVUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<UploadResponse | null>(null);
+  const [graphData, setGraphData] = useState<GraphResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showGraph, setShowGraph] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,6 +62,8 @@ export default function CSVUpload() {
     if (selectedFile) {
       setFile(selectedFile);
       setResponse(null);
+      setGraphData(null);
+      setShowGraph(false);
       setError(null);
     }
   };
@@ -62,8 +90,55 @@ export default function CSVUpload() {
 
       const result: UploadResponse = await res.json();
       setResponse(result);
+
+      // If upload was successful, also fetch graph data
+      if (result.success && result.valid_transactions.length > 0) {
+        await fetchGraphData();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGraphData = async () => {
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("http://localhost:8000/graph-data", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const graphResult: GraphResponse = await res.json();
+        setGraphData(graphResult);
+      }
+    } catch (err) {
+      console.error("Failed to fetch graph data:", err);
+    }
+  };
+
+  const loadExistingGraphData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:8000/graph-data/existing");
+
+      if (res.ok) {
+        const graphResult: GraphResponse = await res.json();
+        setGraphData(graphResult);
+        setShowGraph(true);
+      } else {
+        throw new Error("Failed to load existing graph data");
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load graph data",
+      );
     } finally {
       setLoading(false);
     }
@@ -72,6 +147,8 @@ export default function CSVUpload() {
   const clearFile = () => {
     setFile(null);
     setResponse(null);
+    setGraphData(null);
+    setShowGraph(false);
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -123,9 +200,17 @@ export default function CSVUpload() {
           <button
             onClick={handleUpload}
             disabled={!file || loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
           >
             {loading ? "Processing..." : "Upload and Validate"}
+          </button>
+
+          <button
+            onClick={loadExistingGraphData}
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Loading..." : "Load Existing Sample Data"}
           </button>
         </div>
       </div>
@@ -134,6 +219,35 @@ export default function CSVUpload() {
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <p className="text-red-800 text-sm font-medium">Error:</p>
           <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+
+      {response && response.success && graphData && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center bg-green-50 border border-green-200 rounded-md p-4">
+            <div>
+              <h3 className="text-lg font-medium text-green-800">
+                🎉 Graph Ready!
+              </h3>
+              <p className="text-sm text-green-700">
+                Successfully processed {response.valid_transactions.length}{" "}
+                transactions
+              </p>
+            </div>
+            <button
+              onClick={() => setShowGraph(!showGraph)}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              {showGraph ? "📊 Hide Graph" : "📈 View Graph"}
+            </button>
+          </div>
+
+          {showGraph && (
+            <GraphVisualization
+              graphData={graphData.graph}
+              stats={graphData.stats}
+            />
+          )}
         </div>
       )}
 
@@ -255,6 +369,13 @@ export default function CSVUpload() {
             </div>
           )}
         </div>
+      )}
+
+      {showGraph && !response && graphData && (
+        <GraphVisualization
+          graphData={graphData.graph}
+          stats={graphData.stats}
+        />
       )}
 
       <div className="bg-blue-50 border border-blue-200 rounded-md p-4">

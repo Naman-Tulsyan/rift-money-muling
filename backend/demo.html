@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transaction Network Graph - Demo</title>
+    <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+        padding: 20px;
+      }
+      .controls {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+      .btn-secondary {
+        background: #6b7280;
+        color: white;
+      }
+      .btn-secondary:hover {
+        background: #4b5563;
+      }
+      #cy {
+        width: 100%;
+        height: 500px;
+        border: 1px solid #ddd;
+      }
+      .stats {
+        padding: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        background: #f8fafc;
+      }
+      .stat-card {
+        text-align: center;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid #3b82f6;
+      }
+      .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1f2937;
+      }
+      .stat-label {
+        font-size: 14px;
+        color: #6b7280;
+        margin-top: 5px;
+      }
+      .info-panel {
+        padding: 20px;
+        background: #f0f9ff;
+        border-left: 4px solid #0ea5e9;
+      }
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+      .error {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+        color: #dc2626;
+        padding: 15px;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>💰 Transaction Network Graph</h1>
+        <p>Interactive visualization of money flow patterns</p>
+      </div>
+
+      <div class="controls">
+        <button id="loadGraph" class="btn btn-primary">
+          🚀 Load Sample Graph
+        </button>
+        <button id="resetView" class="btn btn-secondary">🔄 Reset View</button>
+
+        <div style="margin-left: auto">
+          <label>Layout: </label>
+          <select id="layoutSelect">
+            <option value="cose">Cose (Force-directed)</option>
+            <option value="circle">Circle</option>
+            <option value="grid">Grid</option>
+            <option value="breadthfirst">Breadth-first</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="loadingDiv" class="loading" style="display: none">
+        <p>⏳ Loading graph data...</p>
+      </div>
+
+      <div id="errorDiv" class="error" style="display: none"></div>
+
+      <div id="graphContainer" style="display: none">
+        <div id="cy"></div>
+
+        <div id="statsDiv" class="stats"></div>
+
+        <div class="info-panel">
+          <h3>🎯 How to Interact:</h3>
+          <ul>
+            <li><strong>Zoom:</strong> Mouse wheel or pinch gesture</li>
+            <li><strong>Pan:</strong> Click and drag on empty space</li>
+            <li>
+              <strong>Select:</strong> Click on nodes (accounts) or edges
+              (transactions)
+            </li>
+            <li>
+              <strong>Layout:</strong> Use dropdown to change graph arrangement
+            </li>
+          </ul>
+          <p>
+            <strong>Node Size:</strong> Represents account activity |
+            <strong>Edge Thickness:</strong> Represents transaction amount
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let cy;
+      let graphData;
+
+      async function loadGraphData() {
+        const loadingDiv = document.getElementById("loadingDiv");
+        const errorDiv = document.getElementById("errorDiv");
+        const graphContainer = document.getElementById("graphContainer");
+
+        loadingDiv.style.display = "block";
+        errorDiv.style.display = "none";
+        graphContainer.style.display = "none";
+
+        try {
+          const response = await fetch(
+            "http://localhost:8000/graph-data/existing",
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          graphData = data;
+
+          createGraph(data);
+          updateStats(data.stats);
+
+          loadingDiv.style.display = "none";
+          graphContainer.style.display = "block";
+        } catch (error) {
+          loadingDiv.style.display = "none";
+          errorDiv.style.display = "block";
+          errorDiv.innerHTML = `<strong>Error:</strong> ${error.message}<br><small>Make sure the backend server is running on http://localhost:8000</small>`;
+        }
+      }
+
+      function createGraph(data) {
+        const nodes = data.graph.nodes.map((node) => ({
+          data: { id: node.id },
+        }));
+
+        const edges = data.graph.edges.map((edge) => ({
+          data: {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            amount: edge.amount,
+            timestamp: edge.timestamp,
+            weight: Math.log10(edge.amount + 1),
+          },
+        }));
+
+        cy = cytoscape({
+          container: document.getElementById("cy"),
+          elements: [...nodes, ...edges],
+          style: [
+            {
+              selector: "node",
+              style: {
+                "background-color": "#3B82F6",
+                label: "data(id)",
+                "text-valign": "center",
+                "text-halign": "center",
+                color: "#ffffff",
+                "font-size": "10px",
+                "font-weight": "bold",
+                width: "25px",
+                height: "25px",
+                "border-width": "2px",
+                "border-color": "#1E40AF",
+                "text-background-color": "#000000",
+                "text-background-opacity": 0.7,
+                "text-background-padding": "2px",
+              },
+            },
+            {
+              selector: "node:selected",
+              style: {
+                "background-color": "#EF4444",
+                "border-color": "#DC2626",
+                "border-width": "3px",
+              },
+            },
+            {
+              selector: "edge",
+              style: {
+                width: "mapData(weight, 0, 6, 1, 5)",
+                "line-color": "#64748B",
+                "target-arrow-color": "#64748B",
+                "target-arrow-shape": "triangle",
+                "curve-style": "bezier",
+                opacity: 0.6,
+              },
+            },
+            {
+              selector: "edge:selected",
+              style: {
+                "line-color": "#EF4444",
+                "target-arrow-color": "#EF4444",
+                width: "mapData(weight, 0, 6, 2, 8)",
+                opacity: 1,
+              },
+            },
+          ],
+          layout: {
+            name: "cose",
+            animate: true,
+            animationDuration: 1000,
+            padding: 30,
+          },
+        });
+
+        // Add event listeners
+        cy.on("tap", "node", function (evt) {
+          const node = evt.target;
+          console.log("Selected node:", node.id());
+        });
+
+        cy.on("tap", "edge", function (evt) {
+          const edge = evt.target;
+          console.log("Selected edge:", {
+            id: edge.id(),
+            amount: edge.data("amount"),
+            from: edge.data("source"),
+            to: edge.data("target"),
+            timestamp: edge.data("timestamp"),
+          });
+        });
+      }
+
+      function updateStats(stats) {
+        const statsDiv = document.getElementById("statsDiv");
+        statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.nodes_count}</div>
+                    <div class="stat-label">Accounts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.edges_count}</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">$${stats.total_amount.toLocaleString()}</div>
+                    <div class="stat-label">Total Amount</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.unique_accounts}</div>
+                    <div class="stat-label">Unique Accounts</div>
+                </div>
+            `;
+      }
+
+      // Event listeners
+      document
+        .getElementById("loadGraph")
+        .addEventListener("click", loadGraphData);
+
+      document.getElementById("resetView").addEventListener("click", () => {
+        if (cy) {
+          cy.fit();
+          cy.center();
+        }
+      });
+
+      document
+        .getElementById("layoutSelect")
+        .addEventListener("change", (e) => {
+          if (cy) {
+            cy.layout({
+              name: e.target.value,
+              animate: true,
+              animationDuration: 1000,
+            }).run();
+          }
+        });
+
+      // Auto-load graph on page load
+      window.addEventListener("load", () => {
+        setTimeout(loadGraphData, 500);
+      });
+    </script>
+  </body>
+</html>
