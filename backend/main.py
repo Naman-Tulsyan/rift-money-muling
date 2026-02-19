@@ -1,12 +1,17 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import io
+import os
+import time
 import pandas as pd
 import networkx as nx
 from dateutil import parser as date_parser
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, validator
+
+from services.json_formatter import build_final_json
 
 app = FastAPI(title="Rift Money Muling API", version="0.1.0")
 
@@ -1569,6 +1574,146 @@ async def get_suspicion_scores_existing() -> SuspicionScoreResponse:
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scoring error: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# Full Analysis & Report Endpoints
+# ---------------------------------------------------------------------------
+
+def _load_existing_transactions() -> List["Transaction"]:
+    """Load and validate transactions from the existing CSV file."""
+    csv_file_path = os.path.join(os.path.dirname(__file__), "transactions.csv")
+    if not os.path.exists(csv_file_path):
+        raise HTTPException(status_code=404, detail="transactions.csv file not found")
+
+    csv_data = pd.read_csv(csv_file_path)
+    required_columns = {"transaction_id", "sender_id", "receiver_id", "amount", "timestamp"}
+    missing = required_columns - set(csv_data.columns)
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Missing required columns: {', '.join(missing)}")
+
+    valid: List[Transaction] = []
+    for _, row in csv_data.iterrows():
+        try:
+            valid.append(Transaction(
+                transaction_id=str(row["transaction_id"]).strip(),
+                sender_id=str(row["sender_id"]).strip(),
+                receiver_id=str(row["receiver_id"]).strip(),
+                amount=row["amount"],
+                timestamp=row["timestamp"],
+            ))
+        except Exception:
+            continue
+    return valid
+
+
+def _run_pipeline(transactions: List["Transaction"]) -> Dict[str, Any]:
+    """
+    Execute the full detection pipeline and build the JSON report.
+
+    Returns the report dict (also saved to output/latest_report.json).
+    """
+    t_start = time.perf_counter()
+
+    # 1. Build graph
+    G = build_transaction_graph(transactions)
+    outgoing_map, incoming_map = create_transaction_maps(G)
+
+    # 2. Detect rings
+    cycle_rings = cycle_detector(G)
+    smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
+    layered_rings_list = detect_layered_networks(G, incoming_map, outgoing_map)
+    fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings_list)
+
+    # 3. Compute suspicion scores
+    suspicious_accounts = compute_suspicion_scores(G, fraud_rings)
+
+    # 4. Prepare data for the JSON formatter
+    # Convert SuspiciousRing objects to plain dicts
+    rings_as_dicts: List[Dict[str, Any]] = [
+        {
+            "ring_id": r.ring_id,
+            "pattern": r.pattern,
+            "members": list(r.members),
+            "risk_score": int(r.risk_score or 0),
+        }
+        for r in fraud_rings
+    ]
+
+    # account_scores: account_id → suspicion_score
+    account_scores: Dict[str, int] = {
+        sa.account_id: sa.suspicion_score for sa in suspicious_accounts
+    }
+
+    # account_ring_map: account_id → first (highest-risk) ring_id or None
+    acct_ring_membership = build_account_ring_map(fraud_rings)
+    account_ring_map: Dict[str, Optional[str]] = {
+        acc: (rings[0] if rings else None)
+        for acc, rings in acct_ring_membership.items()
+    }
+
+    t_end = time.perf_counter()
+
+    # 5. Build & save the report
+    report = build_final_json(
+        transactions=transactions,
+        fraud_rings=rings_as_dicts,
+        account_scores=account_scores,
+        account_ring_map=account_ring_map,
+        processing_time_seconds=t_end - t_start,
+    )
+    return report
+
+
+@app.post("/analyze")
+async def analyze(file: Optional[UploadFile] = File(None)) -> Dict[str, Any]:
+    """
+    Run the full fraud detection pipeline and return the JSON report.
+
+    - If a CSV file is uploaded, it is used as the data source.
+    - If no file is provided, the existing ``transactions.csv`` is used.
+
+    The report is also persisted to ``output/latest_report.json``.
+    """
+    try:
+        if file is not None:
+            csv_response = await upload_csv(file)
+            if not csv_response.success:
+                raise HTTPException(status_code=400, detail=f"CSV validation failed: {csv_response.message}")
+            transactions = csv_response.valid_transactions
+        else:
+            transactions = _load_existing_transactions()
+
+        if not transactions:
+            raise HTTPException(status_code=400, detail="No valid transactions to analyze")
+
+        return _run_pipeline(transactions)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
+
+
+@app.get("/download-report")
+async def download_report() -> FileResponse:
+    """
+    Download the latest fraud detection report as a JSON file.
+
+    Returns ``output/latest_report.json`` with the download filename
+    ``fraud_detection_report.json``.
+    """
+    report_path = os.path.join(os.path.dirname(__file__), "output", "latest_report.json")
+    if not os.path.exists(report_path):
+        raise HTTPException(
+            status_code=404,
+            detail="No report available. Run POST /analyze first.",
+        )
+    return FileResponse(
+        path=report_path,
+        media_type="application/json",
+        filename="fraud_detection_report.json",
+    )
 
 
 @app.get("/transactions/sample")

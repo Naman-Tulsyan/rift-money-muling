@@ -1,0 +1,1212 @@
+{
+  "summary": {
+    "total_accounts": 344,
+    "total_transactions": 954,
+    "fraud_rings_detected": 27,
+    "suspicious_accounts_count": 137,
+    "processing_time_seconds": 6.8646
+  },
+  "fraud_rings": [
+    {
+      "ring_id": "RING_001",
+      "pattern": "cycle",
+      "members": [
+        "A0301",
+        "A0302",
+        "A0303",
+        "A0304",
+        "A0305"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_002",
+      "pattern": "cycle",
+      "members": [
+        "A0016",
+        "A0032",
+        "A0082",
+        "A0123",
+        "A0161"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_003",
+      "pattern": "cycle",
+      "members": [
+        "A0022",
+        "A0153",
+        "A0181",
+        "A0260",
+        "A0284"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_004",
+      "pattern": "smurfing_fan_in",
+      "members": [
+        "A0400",
+        "A0401",
+        "A0402",
+        "A0403",
+        "A0404",
+        "A0405",
+        "A0406",
+        "A0407",
+        "A0408",
+        "A0409",
+        "A0410",
+        "A0411",
+        "A0412",
+        "A0413",
+        "A0414"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_005",
+      "pattern": "smurfing_fan_in",
+      "members": [
+        "A0074",
+        "A0079",
+        "A0087",
+        "A0096",
+        "A0140",
+        "A0142",
+        "A0158",
+        "A0167",
+        "A0195",
+        "A0204",
+        "A0212",
+        "A0277",
+        "A0291",
+        "M001"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_006",
+      "pattern": "smurfing_fan_in",
+      "members": [
+        "A0038",
+        "A0040",
+        "A0073",
+        "A0079",
+        "A0101",
+        "A0103",
+        "A0167",
+        "A0169",
+        "A0171",
+        "A0179",
+        "A0201",
+        "A0202",
+        "A0260",
+        "M002"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_007",
+      "pattern": "smurfing_fan_in",
+      "members": [
+        "A0005",
+        "A0022",
+        "A0043",
+        "A0073",
+        "A0089",
+        "A0096",
+        "A0101",
+        "A0102",
+        "A0116",
+        "A0181",
+        "A0197",
+        "A0213",
+        "A0219",
+        "A0235",
+        "A0251",
+        "A0254",
+        "M003"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_008",
+      "pattern": "smurfing_fan_in",
+      "members": [
+        "A0005",
+        "A0039",
+        "A0046",
+        "A0047",
+        "A0065",
+        "A0085",
+        "A0106",
+        "A0129",
+        "A0141",
+        "A0176",
+        "A0184",
+        "A0211",
+        "A0236",
+        "A0245",
+        "A0264",
+        "M004"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_009",
+      "pattern": "smurfing_fan_in",
+      "members": [
+        "A0052",
+        "A0069",
+        "A0090",
+        "A0105",
+        "A0110",
+        "A0123",
+        "A0138",
+        "A0146",
+        "A0152",
+        "A0159",
+        "A0162",
+        "A0206",
+        "A0223",
+        "A0276",
+        "M005"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_010",
+      "pattern": "smurfing_fan_out",
+      "members": [
+        "A0500",
+        "A0501",
+        "A0502",
+        "A0503",
+        "A0504",
+        "A0505",
+        "A0506",
+        "A0507",
+        "A0508",
+        "A0509",
+        "A0510",
+        "A0511",
+        "A0512",
+        "A0513",
+        "A0514"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_011",
+      "pattern": "cycle",
+      "members": [
+        "A0201",
+        "A0202",
+        "A0203",
+        "A0204"
+      ],
+      "risk_score": 94
+    },
+    {
+      "ring_id": "RING_012",
+      "pattern": "cycle",
+      "members": [
+        "A0101",
+        "A0102",
+        "A0103"
+      ],
+      "risk_score": 93
+    },
+    {
+      "ring_id": "RING_013",
+      "pattern": "layered",
+      "members": [
+        "A0009",
+        "A0130",
+        "A0162",
+        "A0189"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_014",
+      "pattern": "layered",
+      "members": [
+        "A0010",
+        "A0013",
+        "A0058",
+        "M002"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_015",
+      "pattern": "layered",
+      "members": [
+        "A0013",
+        "A0058",
+        "A0175",
+        "M002"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_016",
+      "pattern": "layered",
+      "members": [
+        "A0036",
+        "A0251",
+        "A0273",
+        "A0285"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_017",
+      "pattern": "layered",
+      "members": [
+        "A0036",
+        "A0251",
+        "A0273",
+        "M003"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_018",
+      "pattern": "layered",
+      "members": [
+        "A0039",
+        "A0091",
+        "A0212",
+        "M001"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_019",
+      "pattern": "layered",
+      "members": [
+        "A0040",
+        "A0060",
+        "A0072",
+        "A0262"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_020",
+      "pattern": "layered",
+      "members": [
+        "A0060",
+        "A0072",
+        "A0110",
+        "A0262"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_021",
+      "pattern": "layered",
+      "members": [
+        "A0077",
+        "A0110",
+        "A0229",
+        "A0281"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_022",
+      "pattern": "layered",
+      "members": [
+        "A0077",
+        "A0229",
+        "A0276",
+        "A0281"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_023",
+      "pattern": "layered",
+      "members": [
+        "A0078",
+        "A0215",
+        "A0254",
+        "M003"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_024",
+      "pattern": "layered",
+      "members": [
+        "A0078",
+        "A0254",
+        "A0257",
+        "M003"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_025",
+      "pattern": "layered",
+      "members": [
+        "A0092",
+        "A0134",
+        "A0162",
+        "A0260"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_026",
+      "pattern": "layered",
+      "members": [
+        "A0100",
+        "A0179",
+        "A0241",
+        "M002"
+      ],
+      "risk_score": 84
+    },
+    {
+      "ring_id": "RING_027",
+      "pattern": "layered",
+      "members": [
+        "A0100",
+        "A0179",
+        "A0295",
+        "M002"
+      ],
+      "risk_score": 84
+    }
+  ],
+  "suspicious_accounts": [
+    {
+      "account_id": "A0260",
+      "suspicion_score": 95,
+      "risk_level": "HIGH",
+      "associated_ring": "RING_003"
+    },
+    {
+      "account_id": "A0110",
+      "suspicion_score": 80,
+      "risk_level": "HIGH",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0162",
+      "suspicion_score": 80,
+      "risk_level": "HIGH",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0179",
+      "suspicion_score": 80,
+      "risk_level": "HIGH",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0251",
+      "suspicion_score": 80,
+      "risk_level": "HIGH",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0254",
+      "suspicion_score": 80,
+      "risk_level": "HIGH",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "M002",
+      "suspicion_score": 80,
+      "risk_level": "HIGH",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0022",
+      "suspicion_score": 70,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_003"
+    },
+    {
+      "account_id": "A0123",
+      "suspicion_score": 70,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_002"
+    },
+    {
+      "account_id": "A0181",
+      "suspicion_score": 70,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_003"
+    },
+    {
+      "account_id": "A0005",
+      "suspicion_score": 60,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0073",
+      "suspicion_score": 60,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0079",
+      "suspicion_score": 60,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0096",
+      "suspicion_score": 60,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0167",
+      "suspicion_score": 60,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0039",
+      "suspicion_score": 55,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0040",
+      "suspicion_score": 55,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0212",
+      "suspicion_score": 55,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0276",
+      "suspicion_score": 55,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "M003",
+      "suspicion_score": 55,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0013",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_014"
+    },
+    {
+      "account_id": "A0036",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_016"
+    },
+    {
+      "account_id": "A0058",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_014"
+    },
+    {
+      "account_id": "A0060",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_019"
+    },
+    {
+      "account_id": "A0072",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_019"
+    },
+    {
+      "account_id": "A0077",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_021"
+    },
+    {
+      "account_id": "A0078",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_023"
+    },
+    {
+      "account_id": "A0100",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_026"
+    },
+    {
+      "account_id": "A0101",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0229",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_021"
+    },
+    {
+      "account_id": "A0262",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_019"
+    },
+    {
+      "account_id": "A0273",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_016"
+    },
+    {
+      "account_id": "A0281",
+      "suspicion_score": 50,
+      "risk_level": "MEDIUM",
+      "associated_ring": "RING_021"
+    },
+    {
+      "account_id": "A0016",
+      "suspicion_score": 40,
+      "risk_level": "LOW",
+      "associated_ring": "RING_002"
+    },
+    {
+      "account_id": "A0032",
+      "suspicion_score": 40,
+      "risk_level": "LOW",
+      "associated_ring": "RING_002"
+    },
+    {
+      "account_id": "A0082",
+      "suspicion_score": 40,
+      "risk_level": "LOW",
+      "associated_ring": "RING_002"
+    },
+    {
+      "account_id": "A0153",
+      "suspicion_score": 40,
+      "risk_level": "LOW",
+      "associated_ring": "RING_003"
+    },
+    {
+      "account_id": "A0161",
+      "suspicion_score": 40,
+      "risk_level": "LOW",
+      "associated_ring": "RING_002"
+    },
+    {
+      "account_id": "A0284",
+      "suspicion_score": 40,
+      "risk_level": "LOW",
+      "associated_ring": "RING_003"
+    },
+    {
+      "account_id": "A0038",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0043",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0046",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0047",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0052",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0065",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0069",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0074",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0085",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0087",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0089",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0090",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0105",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0106",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0116",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0129",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0138",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0140",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0141",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0142",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0146",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0152",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0158",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0159",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0169",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0171",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0176",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0184",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0195",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0197",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0206",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0211",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0213",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0219",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0223",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    },
+    {
+      "account_id": "A0235",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0236",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0245",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0264",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "A0277",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0291",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0401",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0402",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0403",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0404",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0405",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0406",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0407",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0408",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0409",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0410",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0411",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0412",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0413",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0414",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0501",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0502",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0503",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0504",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0505",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0506",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0507",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0508",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0509",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0510",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0511",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0512",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0513",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0514",
+      "suspicion_score": 30,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "A0009",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_013"
+    },
+    {
+      "account_id": "A0010",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_014"
+    },
+    {
+      "account_id": "A0091",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_018"
+    },
+    {
+      "account_id": "A0092",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_025"
+    },
+    {
+      "account_id": "A0130",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_013"
+    },
+    {
+      "account_id": "A0134",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_025"
+    },
+    {
+      "account_id": "A0175",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_015"
+    },
+    {
+      "account_id": "A0189",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_013"
+    },
+    {
+      "account_id": "A0215",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_023"
+    },
+    {
+      "account_id": "A0241",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_026"
+    },
+    {
+      "account_id": "A0257",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_024"
+    },
+    {
+      "account_id": "A0285",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_016"
+    },
+    {
+      "account_id": "A0295",
+      "suspicion_score": 25,
+      "risk_level": "LOW",
+      "associated_ring": "RING_027"
+    },
+    {
+      "account_id": "A0102",
+      "suspicion_score": 20,
+      "risk_level": "LOW",
+      "associated_ring": "RING_007"
+    },
+    {
+      "account_id": "A0103",
+      "suspicion_score": 20,
+      "risk_level": "LOW",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0201",
+      "suspicion_score": 20,
+      "risk_level": "LOW",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0202",
+      "suspicion_score": 20,
+      "risk_level": "LOW",
+      "associated_ring": "RING_006"
+    },
+    {
+      "account_id": "A0204",
+      "suspicion_score": 20,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "M001",
+      "suspicion_score": 5,
+      "risk_level": "LOW",
+      "associated_ring": "RING_005"
+    },
+    {
+      "account_id": "A0203",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_011"
+    },
+    {
+      "account_id": "A0301",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_001"
+    },
+    {
+      "account_id": "A0302",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_001"
+    },
+    {
+      "account_id": "A0303",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_001"
+    },
+    {
+      "account_id": "A0304",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_001"
+    },
+    {
+      "account_id": "A0305",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_001"
+    },
+    {
+      "account_id": "A0400",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_004"
+    },
+    {
+      "account_id": "A0500",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_010"
+    },
+    {
+      "account_id": "M004",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_008"
+    },
+    {
+      "account_id": "M005",
+      "suspicion_score": 0,
+      "risk_level": "LOW",
+      "associated_ring": "RING_009"
+    }
+  ]
+}

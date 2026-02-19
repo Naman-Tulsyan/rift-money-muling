@@ -86,7 +86,57 @@ export default function CSVUpload() {
   const [error, setError] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
   const [showRings, setShowRings] = useState(false);
+  const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAnalyzeAndDownload = async () => {
+    setAnalyzeLoading(true);
+    setError(null);
+
+    try {
+      // Step 1: Run analysis (with or without file)
+      const formData = new FormData();
+      if (file) {
+        formData.append("file", file);
+      }
+
+      const analyzeResponse = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        body: file ? formData : undefined,
+      });
+
+      if (!analyzeResponse.ok) {
+        const errorData = await analyzeResponse.json();
+        throw new Error(errorData.detail || "Analysis failed");
+      }
+
+      // Step 2: Download the generated report
+      const downloadResponse = await fetch(
+        "http://localhost:8000/download-report",
+      );
+
+      if (!downloadResponse.ok) {
+        throw new Error("Failed to download report");
+      }
+
+      // Create a blob and download
+      const blob = await downloadResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "fraud_detection_report.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Analysis and download failed",
+      );
+    } finally {
+      setAnalyzeLoading(false);
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -273,11 +323,56 @@ export default function CSVUpload() {
 
           <button
             onClick={loadExistingGraphData}
-            disabled={loading}
+            disabled={loading || analyzeLoading}
             className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Loading..." : "Load Existing Sample Data"}
           </button>
+
+          {/* Download Analysis Report Button */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <div className="mb-2">
+              <p className="text-sm text-gray-600">
+                Generate and download a comprehensive fraud detection report
+              </p>
+            </div>
+            <button
+              onClick={handleAnalyzeAndDownload}
+              disabled={loading || analyzeLoading}
+              className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {analyzeLoading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Analyzing & Generating Report...
+                </>
+              ) : (
+                <>📊 Generate & Download Report</>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-1">
+              {file ? "Uses uploaded file" : "Uses existing sample data"}
+            </p>
+          </div>
         </div>
       </div>
 
