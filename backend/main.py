@@ -23,7 +23,7 @@ app = FastAPI(title="Rift Money Muling API", version="0.1.0")
 # Add CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["https://rift-money-muling-zqd4.vercel.app/"],  # Configure appropriately for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
