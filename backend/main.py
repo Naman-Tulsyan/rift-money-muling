@@ -836,6 +836,281 @@ def aggregate_fraud_rings(
     return final
 
 
+# ---------------------------------------------------------------------------
+# Suspicious Account Scoring (deterministic, rule-based)
+# ---------------------------------------------------------------------------
+
+_PATTERN_SCORES: Dict[str, int] = {
+    "cycle": 40,
+    "smurfing_fan_in": 30,
+    "smurfing_fan_out": 30,
+    "layered": 25,
+}
+
+_VELOCITY_BONUS_HIGH = 20   # > 10 tx/hour
+_VELOCITY_BONUS_LOW = 10    # > 5  tx/hour
+_MERCHANT_PENALTY = -50
+_SCORING_MERCHANT_TX_THRESHOLD = 200
+
+
+class SuspiciousAccount(BaseModel):
+    """Model for a scored suspicious account."""
+    account_id: str
+    suspicion_score: int
+    involved_rings: List[str]
+
+
+class SuspicionScoreResponse(BaseModel):
+    """Response model for the suspicion scoring endpoint."""
+    success: bool
+    message: str
+    total_accounts: int
+    suspicious_accounts: List[SuspiciousAccount]
+
+
+def build_account_ring_map(
+    fraud_rings: List[SuspiciousRing],
+) -> Dict[str, List[str]]:
+    """
+    Build a mapping from account ID → list of ring IDs the account belongs to.
+
+    Args:
+        fraud_rings: Aggregated fraud rings (each has ring_id, members, pattern).
+
+    Returns:
+        Dict mapping each account to its list of ring IDs (sorted for determinism).
+    """
+    account_to_rings: Dict[str, List[str]] = {}
+    for ring in fraud_rings:
+        for member in ring.members:
+            account_to_rings.setdefault(member, []).append(ring.ring_id)
+    # Sort ring lists for determinism
+    for acc in account_to_rings:
+        account_to_rings[acc] = sorted(account_to_rings[acc])
+    return account_to_rings
+
+
+def apply_ring_scores(
+    fraud_rings: List[SuspiciousRing],
+) -> Dict[str, int]:
+    """
+    Compute the base score for every account from the rings it belongs to.
+    Scores from ALL rings are summed.
+
+    Args:
+        fraud_rings: Aggregated fraud rings.
+
+    Returns:
+        Dict mapping account_id → cumulative pattern-based score.
+    """
+    scores: Dict[str, int] = {}
+    for ring in fraud_rings:
+        pattern_score = _PATTERN_SCORES.get(ring.pattern, 0)
+        for member in ring.members:
+            scores[member] = scores.get(member, 0) + pattern_score
+    return scores
+
+
+def compute_transaction_metrics(
+    G: nx.MultiDiGraph,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    For every node in the graph, compute:
+      - total_transactions: number of edges (in + out)
+      - max_tx_per_hour: maximum transactions within any 1-hour sliding window
+      - is_merchant: True if total_transactions > 200 OR degree is very high
+                     compared to the graph average
+
+    Args:
+        G: Transaction MultiDiGraph.
+
+    Returns:
+        Dict mapping account_id → metrics dict.
+    """
+    metrics: Dict[str, Dict[str, Any]] = {}
+
+    # Gather timestamps per node (both sent and received count)
+    node_timestamps: Dict[str, List[datetime]] = {}
+    node_tx_count: Dict[str, int] = {}
+
+    for node in G.nodes():
+        node_tx_count[node] = 0
+        node_timestamps[node] = []
+
+    for u, v, data in G.edges(data=True):
+        ts = data.get("timestamp")
+        # sender activity
+        node_tx_count[u] = node_tx_count.get(u, 0) + 1
+        if ts is not None:
+            node_timestamps.setdefault(u, []).append(ts)
+        # receiver activity
+        node_tx_count[v] = node_tx_count.get(v, 0) + 1
+        if ts is not None:
+            node_timestamps.setdefault(v, []).append(ts)
+
+    # Average degree for merchant heuristic
+    total_nodes = G.number_of_nodes()
+    avg_tx = (sum(node_tx_count.values()) / total_nodes) if total_nodes > 0 else 0.0
+    high_degree_threshold = avg_tx * 3  # 3× the average is "very high"
+
+    one_hour = timedelta(hours=1)
+
+    for node in sorted(G.nodes()):  # sorted for determinism
+        total_tx = node_tx_count.get(node, 0)
+        timestamps = sorted(node_timestamps.get(node, []))
+
+        # Sliding-window for max tx/hour
+        max_tx_per_hour = 0
+        if timestamps:
+            left = 0
+            for right in range(len(timestamps)):
+                while timestamps[right] - timestamps[left] > one_hour:
+                    left += 1
+                window_size = right - left + 1
+                if window_size > max_tx_per_hour:
+                    max_tx_per_hour = window_size
+
+        is_merchant_node = (
+            total_tx > _SCORING_MERCHANT_TX_THRESHOLD
+            or total_tx > high_degree_threshold
+        )
+
+        metrics[node] = {
+            "total_transactions": total_tx,
+            "max_tx_per_hour": max_tx_per_hour,
+            "is_merchant": is_merchant_node,
+        }
+
+    return metrics
+
+
+def apply_velocity_bonus(
+    scores: Dict[str, int],
+    metrics: Dict[str, Dict[str, Any]],
+) -> Dict[str, int]:
+    """
+    Add a velocity bonus to accounts with high transaction frequency.
+
+    Rules (highest applicable only):
+      > 10 tx/hour  → +20
+      > 5  tx/hour  → +10
+
+    Args:
+        scores: Current account scores (mutated in-place copy is fine).
+        metrics: Per-node transaction metrics.
+
+    Returns:
+        Updated scores dict.
+    """
+    updated = dict(scores)
+    for account, m in metrics.items():
+        rate = m["max_tx_per_hour"]
+        bonus = 0
+        if rate > 10:
+            bonus = _VELOCITY_BONUS_HIGH
+        elif rate > 5:
+            bonus = _VELOCITY_BONUS_LOW
+        if bonus and account in updated:
+            updated[account] += bonus
+    return updated
+
+
+def apply_merchant_penalty(
+    scores: Dict[str, int],
+    metrics: Dict[str, Dict[str, Any]],
+) -> Dict[str, int]:
+    """
+    Subtract merchant penalty from merchant-like accounts.
+
+    Args:
+        scores: Current account scores.
+        metrics: Per-node transaction metrics.
+
+    Returns:
+        Updated scores dict.
+    """
+    updated = dict(scores)
+    for account in updated:
+        if metrics.get(account, {}).get("is_merchant", False):
+            updated[account] += _MERCHANT_PENALTY  # negative value
+    return updated
+
+
+def build_final_account_list(
+    scores: Dict[str, int],
+    account_to_rings: Dict[str, List[str]],
+) -> List[SuspiciousAccount]:
+    """
+    Build the final sorted list of suspicious accounts.
+
+    * Scores are clamped to [0, 100] and cast to int.
+    * Sorted by suspicion_score DESC, then account_id ASC (tie-break).
+    * Only accounts that appear in at least one ring are included.
+
+    Args:
+        scores: Final computed scores.
+        account_to_rings: Mapping of account → ring IDs.
+
+    Returns:
+        Sorted list of SuspiciousAccount objects.
+    """
+    result: List[SuspiciousAccount] = []
+    for account_id in account_to_rings:
+        raw_score = scores.get(account_id, 0)
+        clamped = max(0, min(100, raw_score))
+        result.append(
+            SuspiciousAccount(
+                account_id=account_id,
+                suspicion_score=int(clamped),
+                involved_rings=sorted(account_to_rings[account_id]),
+            )
+        )
+    # Primary: score DESC, secondary: account_id ASC (determinism)
+    result.sort(key=lambda a: (-a.suspicion_score, a.account_id))
+    return result
+
+
+def compute_suspicion_scores(
+    G: nx.MultiDiGraph,
+    fraud_rings: List[SuspiciousRing],
+) -> List[SuspiciousAccount]:
+    """
+    Main entry point for the suspicion scoring engine.
+
+    Pipeline:
+      1. Build account → ring membership map
+      2. Compute base scores from ring patterns
+      3. Compute per-node transaction metrics
+      4. Apply velocity bonus
+      5. Apply merchant penalty
+      6. Clamp scores and build final sorted list
+
+    Args:
+        G: Transaction MultiDiGraph.
+        fraud_rings: Aggregated fraud rings from all detectors.
+
+    Returns:
+        Deterministic, sorted list of SuspiciousAccount objects.
+    """
+    # Step 1 – ring membership
+    account_to_rings = build_account_ring_map(fraud_rings)
+
+    # Step 2 – base pattern scores
+    scores = apply_ring_scores(fraud_rings)
+
+    # Step 3 – transaction metrics (velocity, merchant detection)
+    metrics = compute_transaction_metrics(G)
+
+    # Step 4 – velocity bonus
+    scores = apply_velocity_bonus(scores, metrics)
+
+    # Step 5 – merchant penalty
+    scores = apply_merchant_penalty(scores, metrics)
+
+    # Step 6 – build & sort output
+    return build_final_account_list(scores, account_to_rings)
+
+
 @app.post("/build-graph", response_model=GraphAnalysisResponse)
 async def build_graph(file: UploadFile = File(...)) -> GraphAnalysisResponse:
     """
@@ -1211,6 +1486,90 @@ async def get_existing_graph_data() -> Dict[str, Any]:
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Graph generation error: {str(e)}")
+
+@app.post("/suspicion-scores", response_model=SuspicionScoreResponse)
+async def get_suspicion_scores(file: UploadFile = File(...)) -> SuspicionScoreResponse:
+    """
+    Upload CSV and compute per-account suspicion scores.
+
+    This endpoint runs the full pipeline: graph construction → ring detection
+    → suspicion scoring.
+    """
+    csv_response = await upload_csv(file)
+    if not csv_response.success:
+        raise HTTPException(status_code=400, detail=f"CSV validation failed: {csv_response.message}")
+
+    try:
+        G = build_transaction_graph(csv_response.valid_transactions)
+        outgoing_map, incoming_map = create_transaction_maps(G)
+
+        cycle_rings = cycle_detector(G)
+        smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
+        layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
+        fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings)
+
+        accounts = compute_suspicion_scores(G, fraud_rings)
+
+        return SuspicionScoreResponse(
+            success=True,
+            message=f"Scored {len(accounts)} suspicious accounts from {G.number_of_nodes()} total accounts",
+            total_accounts=len(accounts),
+            suspicious_accounts=accounts,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scoring error: {str(e)}")
+
+
+@app.get("/suspicion-scores/existing", response_model=SuspicionScoreResponse)
+async def get_suspicion_scores_existing() -> SuspicionScoreResponse:
+    """
+    Compute per-account suspicion scores from existing transactions.csv.
+    """
+    try:
+        import os
+        csv_file_path = os.path.join(os.path.dirname(__file__), "transactions.csv")
+        if not os.path.exists(csv_file_path):
+            raise HTTPException(status_code=404, detail="transactions.csv file not found")
+
+        csv_data = pd.read_csv(csv_file_path)
+
+        required_columns = {'transaction_id', 'sender_id', 'receiver_id', 'amount', 'timestamp'}
+        missing_columns = required_columns - set(csv_data.columns)
+        if missing_columns:
+            raise HTTPException(status_code=400, detail=f"Missing required columns: {', '.join(missing_columns)}")
+
+        valid_transactions: List[Transaction] = []
+        for _, row in csv_data.iterrows():
+            try:
+                valid_transactions.append(Transaction(
+                    transaction_id=str(row['transaction_id']).strip(),
+                    sender_id=str(row['sender_id']).strip(),
+                    receiver_id=str(row['receiver_id']).strip(),
+                    amount=row['amount'],
+                    timestamp=row['timestamp'],
+                ))
+            except Exception:
+                continue
+
+        G = build_transaction_graph(valid_transactions)
+        outgoing_map, incoming_map = create_transaction_maps(G)
+
+        cycle_rings = cycle_detector(G)
+        smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
+        layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
+        fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings)
+
+        accounts = compute_suspicion_scores(G, fraud_rings)
+
+        return SuspicionScoreResponse(
+            success=True,
+            message=f"Scored {len(accounts)} suspicious accounts from existing data ({G.number_of_nodes()} accounts, {G.number_of_edges()} transactions)",
+            total_accounts=len(accounts),
+            suspicious_accounts=accounts,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scoring error: {str(e)}")
+
 
 @app.get("/transactions/sample")
 def get_sample_csv() -> dict:
