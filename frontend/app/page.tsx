@@ -237,21 +237,21 @@ export default function Home() {
       case "report":
         return (
           <div className="max-w-xl mx-auto">
-            <div className="bg-[#1a2332] rounded-xl border border-white/5 p-8 text-center">
+            <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-8 text-center">
               <div className="w-16 h-16 mx-auto bg-purple-500/10 rounded-2xl flex items-center justify-center mb-4">
-                <FileText className="w-8 h-8 text-purple-400" />
+                <FileText className="w-8 h-8 text-purple-500" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">
+              <h2 className="text-xl font-bold text-[#1E1E2C] mb-2">
                 Generate Analysis Report
               </h2>
-              <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
+              <p className="text-sm text-[#7C8197] mb-6 max-w-sm mx-auto">
                 Run comprehensive fraud detection analysis and download a
                 detailed JSON report with all findings
               </p>
               <button
                 onClick={handleGenerateReport}
                 disabled={analyzeLoading}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-[#E2E5EE] disabled:text-[#A5AAC0] text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed"
               >
                 {analyzeLoading ? (
                   <>
@@ -266,7 +266,7 @@ export default function Home() {
                 )}
               </button>
               {reportError && (
-                <p className="mt-4 text-sm text-red-400">{reportError}</p>
+                <p className="mt-4 text-sm text-red-500">{reportError}</p>
               )}
             </div>
           </div>
@@ -295,15 +295,15 @@ export default function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Graph Preview */}
                 <div className="lg:col-span-2">
-                  <div className="bg-[#1a2332] rounded-xl border border-white/5 overflow-hidden">
-                    <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                        <Network className="w-4 h-4 text-blue-400" />
+                  <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#E2E5EE] flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-[#1E1E2C] flex items-center gap-2">
+                        <Network className="w-4 h-4 text-[#3B8FF3]" />
                         Transaction Network
                       </h3>
                       <button
                         onClick={() => setCurrentView("graph")}
-                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                        className="text-xs text-[#F29F67] hover:text-[#E8904E] flex items-center gap-1 transition-colors"
                       >
                         Full View <ArrowRight className="w-3 h-3" />
                       </button>
@@ -325,9 +325,9 @@ export default function Home() {
                 {/* Sidebar Panels */}
                 <div className="space-y-4">
                   {/* Top Risks */}
-                  <div className="bg-[#1a2332] rounded-xl border border-white/5 p-5">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
-                      <Shield className="w-4 h-4 text-red-400" />
+                  <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-5">
+                    <h3 className="text-sm font-semibold text-[#1E1E2C] flex items-center gap-2 mb-4">
+                      <Shield className="w-4 h-4 text-red-500" />
                       Top Risk Accounts
                     </h3>
                     <div className="space-y-3">
@@ -339,11 +339,11 @@ export default function Home() {
                             key={account.account_id}
                             className="flex items-center justify-between"
                           >
-                            <span className="text-xs font-mono text-slate-300">
+                            <span className="text-xs font-mono text-[#4A4F63]">
                               {account.account_id}
                             </span>
                             <div className="flex items-center gap-2">
-                              <div className="w-16 h-1 bg-slate-800 rounded-full overflow-hidden">
+                              <div className="w-16 h-1 bg-[#E2E5EE] rounded-full overflow-hidden">
                                 <div
                                   className={`h-full rounded-full ${
                                     account.suspicion_score >= 80
@@ -360,10 +360,10 @@ export default function Home() {
                               <span
                                 className={`text-xs font-bold w-6 text-right ${
                                   account.suspicion_score >= 80
-                                    ? "text-red-400"
+                                    ? "text-red-500"
                                     : account.suspicion_score >= 50
-                                      ? "text-orange-400"
-                                      : "text-amber-400"
+                                      ? "text-orange-500"
+                                      : "text-amber-500"
                                 }`}
                               >
                                 {account.suspicion_score}
@@ -371,33 +371,33 @@ export default function Home() {
                             </div>
                           </div>
                         )) || (
-                        <p className="text-xs text-slate-600">
+                        <p className="text-xs text-[#A5AAC0]">
                           No accounts scored
                         </p>
                       )}
                     </div>
                     <button
                       onClick={() => setCurrentView("scores")}
-                      className="w-full mt-4 py-2 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/5 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      className="w-full mt-4 py-2 text-xs text-[#F29F67] hover:text-[#E8904E] bg-[#F29F67]/5 hover:bg-[#F29F67]/10 rounded-lg transition-colors"
                     >
                       View All Scores →
                     </button>
                   </div>
 
                   {/* Recent Rings */}
-                  <div className="bg-[#1a2332] rounded-xl border border-white/5 p-5">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
-                      <AlertTriangle className="w-4 h-4 text-orange-400" />
+                  <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-5">
+                    <h3 className="text-sm font-semibold text-[#1E1E2C] flex items-center gap-2 mb-4">
+                      <AlertTriangle className="w-4 h-4 text-[#E0B50F]" />
                       Recent Rings
                     </h3>
                     <div className="space-y-2">
                       {ringData?.suspicious_rings.slice(0, 4).map((ring) => (
                         <div
                           key={ring.ring_id}
-                          className="flex items-center justify-between px-3 py-2 bg-[#111827] rounded-lg"
+                          className="flex items-center justify-between px-3 py-2 bg-[#F5F6FA] rounded-lg"
                         >
                           <div>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-[#5A5F72]">
                               {ring.pattern === "cycle" && "🔄"}
                               {ring.pattern === "smurfing_fan_in" && "📥"}
                               {ring.pattern === "smurfing_fan_out" && "📤"}
@@ -408,22 +408,22 @@ export default function Home() {
                           <span
                             className={`text-xs font-bold ${
                               (ring.risk_score || 0) >= 0.7
-                                ? "text-red-400"
-                                : "text-amber-400"
+                                ? "text-red-500"
+                                : "text-amber-500"
                             }`}
                           >
                             {((ring.risk_score || 0) * 100).toFixed(0)}%
                           </span>
                         </div>
                       )) || (
-                        <p className="text-xs text-slate-600">
+                        <p className="text-xs text-[#A5AAC0]">
                           No rings detected
                         </p>
                       )}
                     </div>
                     <button
                       onClick={() => setCurrentView("rings")}
-                      className="w-full mt-4 py-2 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/5 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      className="w-full mt-4 py-2 text-xs text-[#F29F67] hover:text-[#E8904E] bg-[#F29F67]/5 hover:bg-[#F29F67]/10 rounded-lg transition-colors"
                     >
                       View All Rings →
                     </button>
@@ -432,21 +432,21 @@ export default function Home() {
               </div>
             ) : (
               /* Empty State */
-              <div className="bg-[#1a2332] rounded-xl border border-white/5 p-12 text-center">
-                <div className="w-20 h-20 mx-auto bg-blue-500/10 rounded-2xl flex items-center justify-center mb-5">
-                  <Upload className="w-10 h-10 text-blue-400" />
+              <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-12 text-center">
+                <div className="w-20 h-20 mx-auto bg-[#F29F67]/10 rounded-2xl flex items-center justify-center mb-5">
+                  <Upload className="w-10 h-10 text-[#F29F67]" />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">
+                <h2 className="text-xl font-bold text-[#1E1E2C] mb-2">
                   Welcome to RIFT
                 </h2>
-                <p className="text-sm text-slate-500 mb-6 max-w-md mx-auto">
+                <p className="text-sm text-[#7C8197] mb-6 max-w-md mx-auto">
                   Upload transaction data or load sample data to start detecting
                   money muling patterns and suspicious activities
                 </p>
                 <div className="flex items-center justify-center gap-3">
                   <button
                     onClick={() => setCurrentView("upload")}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-all duration-200"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#F29F67] hover:bg-[#E8904E] text-white text-sm font-medium rounded-xl transition-all duration-200"
                   >
                     <Upload className="w-4 h-4" />
                     Upload CSV
@@ -486,7 +486,7 @@ export default function Home() {
                         // Silent fail
                       }
                     }}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#243044] hover:bg-[#2d4a6f] text-slate-300 text-sm font-medium rounded-xl border border-white/5 transition-all duration-200"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#EEF0F5] hover:bg-[#E2E5EE] text-[#4A4F63] text-sm font-medium rounded-xl border border-[#E2E5EE] transition-all duration-200"
                   >
                     <BarChart3 className="w-4 h-4" />
                     Load Sample Data
@@ -519,7 +519,7 @@ export default function Home() {
             >
               {/* View Header */}
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-[#1E1E2C]">
                   {currentView === "dashboard" && "Dashboard"}
                   {currentView === "upload" && "Upload Data"}
                   {currentView === "graph" && "Transaction Graph"}
@@ -527,7 +527,7 @@ export default function Home() {
                   {currentView === "scores" && "Risk Scores"}
                   {currentView === "report" && "Reports"}
                 </h2>
-                <p className="text-sm text-slate-500 mt-0.5">
+                <p className="text-sm text-[#7C8197] mt-0.5">
                   {currentView === "dashboard" &&
                     "Overview of fraud detection analytics"}
                   {currentView === "upload" &&
@@ -560,17 +560,19 @@ function EmptyState({
   onNavigate: () => void;
 }) {
   return (
-    <div className="bg-[#1a2332] rounded-xl border border-white/5 p-12 text-center">
-      <div className="w-16 h-16 mx-auto bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
-        <Upload className="w-8 h-8 text-slate-600" />
+    <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-12 text-center">
+      <div className="w-16 h-16 mx-auto bg-[#EEF0F5] rounded-2xl flex items-center justify-center mb-4">
+        <Upload className="w-8 h-8 text-[#A5AAC0]" />
       </div>
-      <h3 className="text-lg font-bold text-white mb-2">No Data Available</h3>
-      <p className="text-sm text-slate-500 mb-5">
+      <h3 className="text-lg font-bold text-[#1E1E2C] mb-2">
+        No Data Available
+      </h3>
+      <p className="text-sm text-[#7C8197] mb-5">
         Upload transaction data first to view {view} analysis
       </p>
       <button
         onClick={onNavigate}
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-all duration-200"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#F29F67] hover:bg-[#E8904E] text-white text-sm font-medium rounded-xl transition-all duration-200"
       >
         <Upload className="w-4 h-4" />
         Upload Data

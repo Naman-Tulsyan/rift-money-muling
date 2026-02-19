@@ -335,12 +335,12 @@ export default function CSVUpload({
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="bg-[#1a2332] rounded-xl border border-white/5 overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm overflow-hidden">
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">
+          <h2 className="text-lg font-semibold text-[#1E1E2C] mb-1">
             Import Transaction Data
           </h2>
-          <p className="text-sm text-slate-500 mb-5">
+          <p className="text-sm text-[#7C8197] mb-5">
             Upload a CSV file or load existing sample data to begin analysis
           </p>
 
@@ -354,10 +354,10 @@ export default function CSVUpload({
               drop-zone rounded-xl p-8 text-center cursor-pointer transition-all duration-300
               ${
                 isDragging
-                  ? "active border-blue-400 bg-blue-500/5"
+                  ? "active border-[#F29F67] bg-[#F29F67]/5"
                   : file
-                    ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-slate-700 hover:border-slate-600 bg-[#111827]"
+                    ? "border-[#34B1AA]/30 bg-[#34B1AA]/5"
+                    : "border-[#D0D4DE] hover:border-[#B0B5C8] bg-[#F5F6FA]"
               }
             `}
           >
@@ -375,12 +375,14 @@ export default function CSVUpload({
                 animate={{ scale: 1, opacity: 1 }}
                 className="space-y-3"
               >
-                <div className="w-14 h-14 mx-auto bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                  <FileSpreadsheet className="w-7 h-7 text-emerald-400" />
+                <div className="w-14 h-14 mx-auto bg-[#34B1AA]/10 rounded-xl flex items-center justify-center">
+                  <FileSpreadsheet className="w-7 h-7 text-[#34B1AA]" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">{file.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-sm font-medium text-[#1E1E2C]">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-[#7C8197] mt-0.5">
                     {(file.size / 1024).toFixed(1)} KB
                   </p>
                 </div>
@@ -389,24 +391,24 @@ export default function CSVUpload({
                     e.stopPropagation();
                     clearFile();
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs text-slate-400 hover:text-red-400 bg-slate-800 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs text-[#5A5F72] hover:text-red-500 bg-[#EEF0F5] hover:bg-red-500/10 rounded-lg transition-colors"
                 >
                   <X className="w-3 h-3" /> Remove
                 </button>
               </motion.div>
             ) : (
               <div className="space-y-3">
-                <div className="w-14 h-14 mx-auto bg-slate-800 rounded-xl flex items-center justify-center">
-                  <Upload className="w-7 h-7 text-slate-500" />
+                <div className="w-14 h-14 mx-auto bg-[#EEF0F5] rounded-xl flex items-center justify-center">
+                  <Upload className="w-7 h-7 text-[#A5AAC0]" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-300">
-                    <span className="text-blue-400 font-medium">
+                  <p className="text-sm text-[#4A4F63]">
+                    <span className="text-[#F29F67] font-medium">
                       Click to upload
                     </span>{" "}
                     or drag and drop
                   </p>
-                  <p className="text-xs text-slate-600 mt-1">CSV files only</p>
+                  <p className="text-xs text-[#A5AAC0] mt-1">CSV files only</p>
                 </div>
               </div>
             )}
@@ -422,15 +424,15 @@ export default function CSVUpload({
                 className="mt-4 space-y-2"
               >
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-blue-400 flex items-center gap-1.5">
+                  <span className="text-[#F29F67] flex items-center gap-1.5">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     {loadingStep}
                   </span>
-                  <span className="text-slate-500">{uploadProgress}%</span>
+                  <span className="text-[#7C8197]">{uploadProgress}%</span>
                 </div>
-                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#E2E5EE] rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-linear-to-r from-blue-500 to-cyan-400 rounded-full"
+                    className="h-full bg-linear-to-r from-[#F29F67] to-[#34B1AA] rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${uploadProgress}%` }}
                     transition={{ duration: 0.5 }}
@@ -445,7 +447,7 @@ export default function CSVUpload({
             <button
               onClick={() => processData(false)}
               disabled={!file || loading}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-[#F29F67] hover:bg-[#E8904E] disabled:bg-[#E2E5EE] disabled:text-[#A5AAC0] text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
             >
               {loading && !file ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -457,7 +459,7 @@ export default function CSVUpload({
             <button
               onClick={() => processData(true)}
               disabled={loading}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-[#243044] hover:bg-[#2d4a6f] disabled:bg-slate-800 disabled:text-slate-600 text-slate-300 text-sm font-medium rounded-lg border border-white/5 transition-all duration-200 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-[#EEF0F5] hover:bg-[#E2E5EE] disabled:bg-[#E2E5EE] disabled:text-[#A5AAC0] text-[#4A4F63] text-sm font-medium rounded-lg border border-[#E2E5EE] transition-all duration-200 disabled:cursor-not-allowed"
             >
               <Database className="w-4 h-4" />
               Load Sample Data
@@ -491,14 +493,14 @@ export default function CSVUpload({
               exit={{ opacity: 0, height: 0 }}
               className="px-6 pb-4"
             >
-              <div className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-[#34B1AA]/10 border border-[#34B1AA]/20 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-[#34B1AA] mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-emerald-400">
+                    <p className="text-sm font-medium text-[#34B1AA]">
                       Success
                     </p>
-                    <p className="text-xs text-emerald-400/70 mt-0.5">
+                    <p className="text-xs text-[#34B1AA]/70 mt-0.5">
                       {success}
                     </p>
                   </div>
@@ -506,7 +508,7 @@ export default function CSVUpload({
                 {onNavigate && (
                   <button
                     onClick={() => onNavigate("dashboard")}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 rounded-lg transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs text-[#F29F67] hover:text-[#E8904E] bg-[#F29F67]/10 rounded-lg transition-colors"
                   >
                     View Results
                     <ArrowRight className="w-3 h-3" />
@@ -519,23 +521,23 @@ export default function CSVUpload({
       </div>
 
       {/* Generate Report Card */}
-      <div className="bg-[#1a2332] rounded-xl border border-white/5 p-6">
+      <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-6">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-purple-400" />
+            <FileText className="w-5 h-5 text-purple-500" />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-white mb-1">
+            <h3 className="text-sm font-semibold text-[#1E1E2C] mb-1">
               Generate Analysis Report
             </h3>
-            <p className="text-xs text-slate-500 mb-3">
+            <p className="text-xs text-[#7C8197] mb-3">
               Run comprehensive analysis and download a detailed JSON report
               {file ? " using your uploaded file" : " using sample data"}
             </p>
             <button
               onClick={handleAnalyzeAndDownload}
               disabled={loading || analyzeLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-600 text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-[#E2E5EE] disabled:text-[#A5AAC0] text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
             >
               {analyzeLoading ? (
                 <>
@@ -554,10 +556,10 @@ export default function CSVUpload({
       </div>
 
       {/* CSV Format Guide */}
-      <div className="bg-[#1a2332] rounded-xl border border-white/5 p-5">
+      <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Info className="w-4 h-4 text-blue-400" />
-          <h4 className="text-sm font-medium text-slate-300">
+          <Info className="w-4 h-4 text-[#3B8FF3]" />
+          <h4 className="text-sm font-medium text-[#4A4F63]">
             Required CSV Format
           </h4>
         </div>
@@ -571,12 +573,12 @@ export default function CSVUpload({
           ].map((item) => (
             <div
               key={item.col}
-              className="bg-[#111827] rounded-lg p-2.5 text-center"
+              className="bg-[#F5F6FA] rounded-lg p-2.5 text-center"
             >
-              <code className="text-xs text-blue-400 font-mono">
+              <code className="text-xs text-[#F29F67] font-mono">
                 {item.col}
               </code>
-              <p className="text-[10px] text-slate-600 mt-0.5">{item.desc}</p>
+              <p className="text-[10px] text-[#A5AAC0] mt-0.5">{item.desc}</p>
             </div>
           ))}
         </div>

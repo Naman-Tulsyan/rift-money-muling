@@ -77,16 +77,16 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
         <DistCard
           label="Total Flagged"
           value={accounts.length}
-          color="text-blue-400"
-          bgColor="bg-blue-500/10"
-          borderColor="border-blue-500/20"
+          color="text-[#3B8FF3]"
+          bgColor="bg-[#3B8FF3]/10"
+          borderColor="border-[#3B8FF3]/20"
           active={riskFilter === "all"}
           onClick={() => setRiskFilter("all")}
         />
         <DistCard
           label="High Risk (≥80)"
           value={highRisk}
-          color="text-red-400"
+          color="text-red-500"
           bgColor="bg-red-500/10"
           borderColor="border-red-500/20"
           active={riskFilter === "high"}
@@ -95,9 +95,9 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
         <DistCard
           label="Medium Risk (50-79)"
           value={mediumRisk}
-          color="text-orange-400"
-          bgColor="bg-orange-500/10"
-          borderColor="border-orange-500/20"
+          color="text-[#F29F67]"
+          bgColor="bg-[#F29F67]/10"
+          borderColor="border-[#F29F67]/20"
           active={riskFilter === "medium"}
           onClick={() =>
             setRiskFilter(riskFilter === "medium" ? "all" : "medium")
@@ -106,20 +106,20 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
         <DistCard
           label="Low Risk (<50)"
           value={lowRisk}
-          color="text-amber-400"
-          bgColor="bg-amber-500/10"
-          borderColor="border-amber-500/20"
+          color="text-[#E0B50F]"
+          bgColor="bg-[#E0B50F]/10"
+          borderColor="border-[#E0B50F]/20"
           active={riskFilter === "low"}
           onClick={() => setRiskFilter(riskFilter === "low" ? "all" : "low")}
         />
       </div>
 
       {/* Risk Distribution Bar */}
-      <div className="bg-[#1a2332] rounded-xl border border-white/5 p-5">
-        <h3 className="text-sm font-semibold text-white mb-3">
+      <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-[#1E1E2C] mb-3">
           Risk Distribution
         </h3>
-        <div className="flex h-3 rounded-full overflow-hidden bg-slate-800">
+        <div className="flex h-3 rounded-full overflow-hidden bg-[#E2E5EE]">
           {highRisk > 0 && (
             <div
               className="bg-red-500 transition-all duration-500"
@@ -145,7 +145,7 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
             />
           )}
         </div>
-        <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
+        <div className="flex items-center justify-between mt-2 text-xs text-[#7C8197]">
           <span>{((highRisk / accounts.length) * 100).toFixed(0)}% High</span>
           <span>
             {((mediumRisk / accounts.length) * 100).toFixed(0)}% Medium
@@ -155,25 +155,25 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
       </div>
 
       {/* Scoring Info */}
-      <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl px-5 py-3">
-        <p className="text-xs text-blue-400/80">
+      <div className="bg-[#3B8FF3]/5 border border-[#3B8FF3]/10 rounded-xl px-5 py-3">
+        <p className="text-xs text-[#3B8FF3]/80">
           <strong>Scoring:</strong> Based on ring membership (pattern type),
           transaction velocity, and merchant status. Score range: 0-100.
         </p>
       </div>
 
       {/* Account Table */}
-      <div className="bg-[#1a2332] rounded-xl border border-white/5 overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E2E5EE] shadow-sm overflow-hidden">
         {/* Table Controls */}
-        <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between gap-4">
+        <div className="px-5 py-3 border-b border-[#E2E5EE] flex items-center justify-between gap-4">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A5AAC0]" />
             <input
               type="text"
               placeholder="Search accounts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#111827] border border-white/5 rounded-lg text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/30 transition-colors"
+              className="w-full pl-9 pr-4 py-2 bg-[#F5F6FA] border border-[#E2E5EE] rounded-lg text-sm text-[#1E1E2C] placeholder:text-[#A5AAC0] focus:outline-none focus:border-[#F29F67]/30 transition-colors"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -187,8 +187,8 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
               }}
               className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                 sortBy === "score"
-                  ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                  : "border-white/5 text-slate-500 hover:bg-white/5"
+                  ? "bg-[#F29F67]/10 border-[#F29F67]/20 text-[#F29F67]"
+                  : "border-[#E2E5EE] text-[#7C8197] hover:bg-[#F5F6FA]"
               }`}
             >
               <ArrowUpDown className="w-3 h-3 inline mr-1" />
@@ -204,8 +204,8 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
               }}
               className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                 sortBy === "rings"
-                  ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                  : "border-white/5 text-slate-500 hover:bg-white/5"
+                  ? "bg-[#F29F67]/10 border-[#F29F67]/20 text-[#F29F67]"
+                  : "border-[#E2E5EE] text-[#7C8197] hover:bg-[#F5F6FA]"
               }`}
             >
               <ArrowUpDown className="w-3 h-3 inline mr-1" />
@@ -216,7 +216,7 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
 
         {/* Table */}
         <div className="max-h-125 overflow-y-auto">
-          <table className="w-full dark-table">
+          <table className="w-full data-table">
             <thead className="sticky top-0 z-10">
               <tr>
                 <th className="px-5 py-3 text-left">Account ID</th>
@@ -233,16 +233,16 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.02 }}
-                  className="hover:bg-white/2 transition-colors"
+                  className="hover:bg-[#F8F9FC] transition-colors"
                 >
                   <td className="px-5 py-3">
-                    <span className="text-sm font-mono text-white">
+                    <span className="text-sm font-mono text-[#1E1E2C]">
                       {account.account_id}
                     </span>
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-20 h-1.5 bg-[#E2E5EE] rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             account.suspicion_score >= 80
@@ -256,7 +256,7 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
                           }}
                         />
                       </div>
-                      <span className="text-sm font-medium text-white w-8">
+                      <span className="text-sm font-medium text-[#1E1E2C] w-8">
                         {account.suspicion_score}
                       </span>
                     </div>
@@ -282,8 +282,8 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
                     <span
                       className={`text-xs ${
                         account.is_merchant
-                          ? "text-purple-400"
-                          : "text-slate-500"
+                          ? "text-purple-500"
+                          : "text-[#7C8197]"
                       }`}
                     >
                       {account.is_merchant ? "🏪 Merchant" : "👤 Individual"}
@@ -295,14 +295,14 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
                         {account.involved_rings.map((ringId) => (
                           <span
                             key={ringId}
-                            className="px-1.5 py-0.5 text-[10px] font-mono bg-[#111827] text-slate-400 rounded border border-white/5"
+                            className="px-1.5 py-0.5 text-[10px] font-mono bg-[#F5F6FA] text-[#5A5F72] rounded border border-[#E2E5EE]"
                           >
                             {ringId}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-600">—</span>
+                      <span className="text-xs text-[#A5AAC0]">—</span>
                     )}
                   </td>
                 </motion.tr>
@@ -312,7 +312,7 @@ export default function RiskScoresView({ suspicionData }: RiskScoresViewProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-white/5 text-xs text-slate-600">
+        <div className="px-5 py-3 border-t border-[#E2E5EE] text-xs text-[#A5AAC0]">
           Showing {filteredAccounts.length} of {accounts.length} accounts
         </div>
       </div>
@@ -340,14 +340,14 @@ function DistCard({
   return (
     <button
       onClick={onClick}
-      className={`bg-[#1a2332] rounded-xl border p-4 text-left transition-all duration-200 ${
+      className={`bg-white rounded-xl border p-4 text-left transition-all duration-200 shadow-sm ${
         active
           ? `${borderColor} ${bgColor}`
-          : "border-white/5 hover:border-white/10"
+          : "border-[#E2E5EE] hover:border-[#D0D4DE]"
       }`}
     >
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      <div className="text-[10px] text-slate-500 mt-0.5">{label}</div>
+      <div className="text-[10px] text-[#7C8197] mt-0.5">{label}</div>
     </button>
   );
 }

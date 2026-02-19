@@ -197,19 +197,19 @@ export default function GraphVisualizationNew({
         {
           selector: "node",
           style: {
-            "background-color": "#3b82f6",
+            "background-color": "#3B8FF3",
             label: showLabels ? "data(label)" : "",
             "text-valign": "bottom",
             "text-halign": "center",
-            color: "#94a3b8",
+            color: "#5A5F72",
             "font-size": "9px",
             "font-weight": "500",
             width: "data(nodeSize)",
             height: "data(nodeSize)",
             "border-width": "2px",
-            "border-color": "#1e40af",
+            "border-color": "#2B7AD4",
             "text-margin-y": 8,
-            "text-background-color": "rgba(11, 17, 32, 0.8)",
+            "text-background-color": "rgba(255, 255, 255, 0.85)",
             "text-background-opacity": 1,
             "text-background-padding": "3px",
             "text-background-shape": "roundrectangle",
@@ -229,7 +229,7 @@ export default function GraphVisualizationNew({
         {
           selector: "node:selected",
           style: {
-            "border-color": "#06b6d4",
+            "border-color": "#F29F67",
             "border-width": "4px",
             label: "data(label)",
             "z-index": 999,
@@ -242,7 +242,7 @@ export default function GraphVisualizationNew({
             label: showLabels ? "data(label)" : "data(riskScore)",
             "text-valign": "center",
             "text-halign": "center",
-            color: "#ffffff",
+            color: "#1E1E2C",
             "font-size": "10px",
             "font-weight": "bold",
             "text-background-opacity": 0,
@@ -253,8 +253,8 @@ export default function GraphVisualizationNew({
           selector: "edge",
           style: {
             width: "mapData(weight, 0, 6, 1, 3)",
-            "line-color": "#334155",
-            "target-arrow-color": "#334155",
+            "line-color": "#C8CCD6",
+            "target-arrow-color": "#C8CCD6",
             "target-arrow-shape": "triangle",
             "curve-style": "bezier",
             opacity: 0.4,
@@ -265,16 +265,16 @@ export default function GraphVisualizationNew({
           selector: "edge:hover",
           style: {
             opacity: 0.8,
-            "line-color": "#64748b",
-            "target-arrow-color": "#64748b",
+            "line-color": "#8B8FA3",
+            "target-arrow-color": "#8B8FA3",
             width: "mapData(weight, 0, 6, 2, 5)",
           },
         },
         {
           selector: "edge:selected",
           style: {
-            "line-color": "#06b6d4",
-            "target-arrow-color": "#06b6d4",
+            "line-color": "#F29F67",
+            "target-arrow-color": "#F29F67",
             width: "mapData(weight, 0, 6, 2, 6)",
             opacity: 1,
             "z-index": 999,
@@ -452,50 +452,50 @@ export default function GraphVisualizationNew({
   return (
     <motion.div
       layout
-      className={`bg-[#1a2332] rounded-xl border border-white/5 overflow-hidden ${
+      className={`bg-white rounded-xl border border-[#E2E5EE] shadow-sm overflow-hidden ${
         isFullscreen ? "fixed inset-4 z-50" : ""
       }`}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E5EE]">
         <div className="flex items-center gap-2">
           {/* Zoom Controls */}
-          <div className="flex items-center bg-[#111827] rounded-lg border border-white/5">
+          <div className="flex items-center bg-[#F5F6FA] rounded-lg border border-[#E2E5EE]">
             <button
               onClick={handleZoomIn}
-              className="p-2 hover:bg-white/5 rounded-l-lg transition-colors"
+              className="p-2 hover:bg-[#EEF0F5] rounded-l-lg transition-colors"
               title="Zoom In"
             >
-              <ZoomIn className="w-4 h-4 text-slate-400" />
+              <ZoomIn className="w-4 h-4 text-[#5A5F72]" />
             </button>
-            <div className="w-px h-5 bg-white/5" />
+            <div className="w-px h-5 bg-[#E2E5EE]" />
             <button
               onClick={handleZoomOut}
-              className="p-2 hover:bg-white/5 transition-colors"
+              className="p-2 hover:bg-[#EEF0F5] transition-colors"
               title="Zoom Out"
             >
-              <ZoomOut className="w-4 h-4 text-slate-400" />
+              <ZoomOut className="w-4 h-4 text-[#5A5F72]" />
             </button>
-            <div className="w-px h-5 bg-white/5" />
+            <div className="w-px h-5 bg-[#E2E5EE]" />
             <button
               onClick={toggleFullscreen}
-              className="p-2 hover:bg-white/5 transition-colors"
+              className="p-2 hover:bg-[#EEF0F5] transition-colors"
               title="Fullscreen"
             >
-              <Maximize2 className="w-4 h-4 text-slate-400" />
+              <Maximize2 className="w-4 h-4 text-[#5A5F72]" />
             </button>
-            <div className="w-px h-5 bg-white/5" />
+            <div className="w-px h-5 bg-[#E2E5EE]" />
             <button
               onClick={resetView}
-              className="p-2 hover:bg-white/5 rounded-r-lg transition-colors"
+              className="p-2 hover:bg-[#EEF0F5] rounded-r-lg transition-colors"
               title="Reset View"
             >
-              <RotateCcw className="w-4 h-4 text-slate-400" />
+              <RotateCcw className="w-4 h-4 text-[#5A5F72]" />
             </button>
           </div>
 
           {/* Layout Selector */}
-          <div className="flex items-center bg-[#111827] rounded-lg border border-white/5 ml-2">
+          <div className="flex items-center bg-[#F5F6FA] rounded-lg border border-[#E2E5EE] ml-2">
             {(
               ["cose", "circle", "grid", "breadthfirst", "concentric"] as const
             ).map((layout) => (
@@ -504,8 +504,8 @@ export default function GraphVisualizationNew({
                 onClick={() => handleLayoutChange(layout)}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors first:rounded-l-lg last:rounded-r-lg ${
                   layoutType === layout
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                    ? "bg-[#F29F67] text-white"
+                    : "text-[#7C8197] hover:text-[#1E1E2C] hover:bg-[#EEF0F5]"
                 }`}
               >
                 {layout.charAt(0).toUpperCase() + layout.slice(1)}
@@ -516,12 +516,12 @@ export default function GraphVisualizationNew({
 
         {/* Right Info */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[#7C8197]">
             {filteredNodeCount} nodes • {graphData.edges.length} connections
           </span>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-live" />
-            <span className="text-xs text-emerald-400 font-medium">Live</span>
+            <span className="w-2 h-2 rounded-full bg-[#34B1AA] animate-pulse-live" />
+            <span className="text-xs text-[#34B1AA] font-medium">Live</span>
           </div>
         </div>
       </div>
@@ -531,27 +531,35 @@ export default function GraphVisualizationNew({
         style={{ height: isFullscreen ? "calc(100vh - 120px)" : "600px" }}
       >
         {/* Controls Panel */}
-        <div className="w-64 border-r border-white/5 p-4 space-y-5 overflow-y-auto shrink-0">
-          <h3 className="text-sm font-semibold text-white">Graph Controls</h3>
+        <div className="w-64 border-r border-[#E2E5EE] bg-white p-4 space-y-5 overflow-y-auto shrink-0">
+          <h3 className="text-sm font-bold text-[#1E1E2C] flex items-center gap-2">
+            <Filter className="w-4 h-4 text-[#F29F67]" />
+            Graph Controls
+          </h3>
 
           {/* Risk Filter */}
-          <div>
-            <label className="text-xs text-slate-400 mb-2 block">
-              Risk Level Filter: {riskFilter}%
-            </label>
+          <div className="bg-[#F8F9FC] rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-[#1E1E2C]">
+                Risk Level Filter
+              </label>
+              <span className="text-xs font-bold text-[#F29F67] bg-[#F29F67]/10 px-2 py-0.5 rounded-full">
+                {riskFilter}%
+              </span>
+            </div>
             <input
               type="range"
               min="0"
               max="100"
               value={riskFilter}
               onChange={(e) => setRiskFilter(Number(e.target.value))}
-              className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-blue-500"
+              className="w-full h-1.5 bg-[#E2E5EE] rounded-full appearance-none cursor-pointer accent-[#F29F67]"
             />
           </div>
 
           {/* Detection Patterns */}
           <div>
-            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            <h4 className="text-[11px] font-bold text-[#1E1E2C] uppercase tracking-wider mb-3">
               Detection Patterns
             </h4>
             <div className="space-y-2.5">
@@ -578,41 +586,44 @@ export default function GraphVisualizationNew({
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="border-t border-[#E2E5EE]" />
+
           {/* Node Types Legend */}
           <div>
-            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            <h4 className="text-[11px] font-bold text-[#1E1E2C] uppercase tracking-wider mb-3">
               Node Types
             </h4>
             <div className="space-y-2">
-              <LegendItem color="bg-blue-500" label="Normal Account" />
+              <LegendItem color="bg-[#3B8FF3]" label="Normal Account" />
               <LegendItem color="bg-red-500" label="High Risk" />
               <LegendItem
                 color="bg-purple-500"
                 label="Merchant"
                 shape="diamond"
               />
-              <LegendItem color="bg-red-800" label="Fraud Ring Leader" />
+              <LegendItem color="bg-red-700" label="Fraud Ring Leader" />
               <LegendItem color="bg-orange-500" label="Smurfing Node" />
             </div>
           </div>
 
           {/* Edge Types Legend */}
           <div>
-            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            <h4 className="text-[11px] font-bold text-[#1E1E2C] uppercase tracking-wider mb-3">
               Edge Types
             </h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-0.5 bg-slate-500" />
-                <span className="text-xs text-slate-400">Normal</span>
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-[2px] bg-[#C8CCD6] rounded-full" />
+                <span className="text-xs text-[#4A4F63]">Normal</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-0.5 bg-red-500" />
-                <span className="text-xs text-slate-400">Suspicious</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-[2px] bg-red-500 rounded-full" />
+                <span className="text-xs text-[#4A4F63]">Suspicious</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-1 bg-amber-500" />
-                <span className="text-xs text-slate-400">High Volume</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-[3px] bg-[#E0B50F] rounded-full" />
+                <span className="text-xs text-[#4A4F63]">High Volume</span>
               </div>
             </div>
           </div>
@@ -625,7 +636,7 @@ export default function GraphVisualizationNew({
             className="w-full h-full graph-container"
             style={{
               background:
-                "radial-gradient(ellipse at center, #111827 0%, #0b1120 100%)",
+                "radial-gradient(ellipse at center, #F8F9FC 0%, #ECEEF4 100%)",
             }}
           />
 
@@ -633,9 +644,9 @@ export default function GraphVisualizationNew({
           {isFullscreen && (
             <button
               onClick={toggleFullscreen}
-              className="absolute top-3 right-3 p-2 bg-slate-800/80 rounded-lg hover:bg-slate-700 transition-colors"
+              className="absolute top-3 right-3 p-2 bg-white/80 rounded-lg hover:bg-[#F0F1F5] transition-colors shadow"
             >
-              <X className="w-4 h-4 text-slate-300" />
+              <X className="w-4 h-4 text-[#4A4F63]" />
             </button>
           )}
         </div>
@@ -648,20 +659,20 @@ export default function GraphVisualizationNew({
               animate={{ width: 280, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="border-l border-white/5 overflow-hidden shrink-0"
+              className="border-l border-[#E2E5EE] overflow-hidden shrink-0"
             >
-              <div className="w-70 p-4 space-y-4 h-full overflow-y-auto">
+              <div className="w-70 p-4 space-y-4 h-full overflow-y-auto bg-white">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-white">
+                  <h4 className="text-sm font-bold text-[#1E1E2C]">
                     {selectedElement.type === "node"
                       ? "Account Details"
                       : "Transaction Details"}
                   </h4>
                   <button
                     onClick={() => setSelectedElement(null)}
-                    className="p-1 hover:bg-white/5 rounded transition-colors"
+                    className="p-1.5 hover:bg-[#F0F1F5] rounded-lg transition-colors"
                   >
-                    <X className="w-3.5 h-3.5 text-slate-500" />
+                    <X className="w-4 h-4 text-[#5A5F72]" />
                   </button>
                 </div>
 
@@ -683,15 +694,24 @@ export default function GraphVisualizationNew({
       </div>
 
       {/* Bottom Info Bar */}
-      <div className="px-4 py-2.5 border-t border-white/5 flex items-center justify-between">
-        <p className="text-xs text-slate-600">
+      <div className="px-4 py-2.5 border-t border-[#E2E5EE] bg-[#F8F9FC] flex items-center justify-between">
+        <p className="text-xs text-[#5A5F72]">
           Scroll to zoom • Drag to pan • Click nodes or edges for details
         </p>
         {stats && (
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <span>{stats.nodes_count} accounts</span>
-            <span>{stats.edges_count} transactions</span>
-            <span>${stats.total_amount.toLocaleString()} total volume</span>
+          <div className="flex items-center gap-4 text-xs font-medium text-[#4A4F63]">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3B8FF3]"></span>
+              {stats.nodes_count} accounts
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C8CCD6]"></span>
+              {stats.edges_count} transactions
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E0B50F]"></span>$
+              {stats.total_amount.toLocaleString()} total volume
+            </span>
           </div>
         )}
       </div>
@@ -720,7 +740,7 @@ function ToggleControl({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-xs text-slate-300">{label}</span>
+      <span className="text-[13px] text-[#3A3F52] font-medium">{label}</span>
       <button
         onClick={() => onChange(!enabled)}
         className={`toggle-switch ${enabled ? "active" : ""}`}
@@ -739,13 +759,13 @@ function LegendItem({
   shape?: string;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2.5">
       <div
-        className={`w-3.5 h-3.5 ${color} ${
-          shape === "diamond" ? "rotate-45 rounded-sm" : "rounded-full"
-        } border border-white/10`}
+        className={`w-3 h-3 ${color} ${
+          shape === "diamond" ? "rotate-45 rounded-[2px]" : "rounded-full"
+        } ring-2 ring-white shadow-sm`}
       />
-      <span className="text-xs text-slate-400">{label}</span>
+      <span className="text-[13px] text-[#3A3F52]">{label}</span>
     </div>
   );
 }
@@ -772,24 +792,26 @@ function NodeDetails({
   return (
     <div className="space-y-3">
       {/* Account ID */}
-      <div className="bg-[#111827] rounded-lg p-3">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+      <div className="bg-[#F5F6FA] rounded-xl p-3.5 border border-[#E8EAF0]">
+        <span className="text-[10px] font-semibold text-[#7C8197] uppercase tracking-wider">
           Account ID
         </span>
-        <p className="text-sm font-mono text-white mt-0.5">{nodeId}</p>
+        <p className="text-sm font-mono font-bold text-[#1E1E2C] mt-1">
+          {nodeId}
+        </p>
       </div>
 
       {/* Account Type */}
       <div
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+        className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl ${
           isMerchant
-            ? "bg-purple-500/10 border border-purple-500/20"
-            : "bg-slate-800 border border-white/5"
+            ? "bg-purple-50 border border-purple-200"
+            : "bg-[#F5F6FA] border border-[#E8EAF0]"
         }`}
       >
-        <span className="text-sm">{isMerchant ? "🏪" : "👤"}</span>
+        <span className="text-base">{isMerchant ? "🏪" : "👤"}</span>
         <span
-          className={`text-xs font-medium ${isMerchant ? "text-purple-400" : "text-slate-400"}`}
+          className={`text-[13px] font-semibold ${isMerchant ? "text-purple-600" : "text-[#4A4F63]"}`}
         >
           {isMerchant ? "Merchant Account" : "Individual Account"}
         </span>
@@ -798,34 +820,42 @@ function NodeDetails({
       {/* Risk Score */}
       {account ? (
         <div
-          className={`p-3 rounded-lg border ${
+          className={`p-3.5 rounded-xl border ${
             score >= 80
-              ? "bg-red-500/10 border-red-500/20"
+              ? "bg-red-50 border-red-200"
               : score >= 50
-                ? "bg-orange-500/10 border-orange-500/20"
-                : "bg-amber-500/10 border-amber-500/20"
+                ? "bg-orange-50 border-orange-200"
+                : "bg-amber-50 border-amber-200"
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+          <div className="flex items-center justify-between mb-2.5">
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider ${
+                score >= 80
+                  ? "text-red-700"
+                  : score >= 50
+                    ? "text-orange-700"
+                    : "text-amber-700"
+              }`}
+            >
               Suspicion Score
             </span>
             <span
-              className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                 score >= 80
-                  ? "bg-red-500/20 text-red-400"
+                  ? "bg-red-500 text-white"
                   : score >= 50
-                    ? "bg-orange-500/20 text-orange-400"
-                    : "bg-amber-500/20 text-amber-400"
+                    ? "bg-orange-500 text-white"
+                    : "bg-amber-500 text-white"
               }`}
             >
               {score >= 80 ? "HIGH" : score >= 50 ? "MEDIUM" : "LOW"}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 risk-bar">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2 rounded-full bg-white/60 overflow-hidden">
               <div
-                className={`risk-bar-fill ${
+                className={`h-full rounded-full transition-all duration-700 ${
                   score >= 80
                     ? "bg-red-500"
                     : score >= 50
@@ -835,40 +865,57 @@ function NodeDetails({
                 style={{ width: `${Math.min(100, score)}%` }}
               />
             </div>
-            <span className="text-sm font-bold text-white">{score}</span>
+            <span
+              className={`text-lg font-extrabold ${
+                score >= 80
+                  ? "text-red-600"
+                  : score >= 50
+                    ? "text-orange-600"
+                    : "text-amber-600"
+              }`}
+            >
+              {score}
+            </span>
           </div>
         </div>
       ) : (
-        <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-          <span className="text-xs text-emerald-400">✓ No suspicion flags</span>
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+              <span className="text-emerald-600 text-xs">✓</span>
+            </span>
+            <span className="text-[13px] font-semibold text-emerald-700">
+              No suspicion flags
+            </span>
+          </div>
         </div>
       )}
 
       {/* Ring Memberships */}
       {rings.length > 0 && (
         <div className="space-y-2">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-[#1E1E2C] uppercase tracking-wider">
             Ring Memberships ({rings.length})
           </span>
           {rings.map((ring, i) => (
             <div
               key={i}
-              className="bg-red-500/10 border border-red-500/20 rounded-lg p-2.5"
+              className="bg-red-50 border border-red-200 rounded-xl p-3"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-red-400">
+                <span className="text-[13px] font-semibold text-red-600">
                   {ring.pattern === "cycle" && "🔄 Cycle Ring"}
                   {ring.pattern === "smurfing_fan_in" && "📥 Fan-In"}
                   {ring.pattern === "smurfing_fan_out" && "📤 Fan-Out"}
                   {ring.pattern === "layered" && "🏗️ Layered"}
                 </span>
                 {ring.risk_score && (
-                  <span className="text-[10px] text-red-400/70">
+                  <span className="text-xs font-bold text-red-500">
                     {(ring.risk_score * 100).toFixed(0)}%
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">
+              <p className="text-[11px] text-[#5A5F72] mt-1">
                 {ring.members.length} members
               </p>
             </div>
@@ -882,61 +929,61 @@ function NodeDetails({
 function EdgeDetails({ data }: { data: any }) {
   return (
     <div className="space-y-3">
-      <div className="bg-[#111827] rounded-lg p-3">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+      <div className="bg-[#F5F6FA] rounded-xl p-3.5 border border-[#E8EAF0]">
+        <span className="text-[10px] font-semibold text-[#7C8197] uppercase tracking-wider">
           Transaction ID
         </span>
-        <p className="text-xs font-mono text-white mt-0.5 break-all">
+        <p className="text-xs font-mono font-bold text-[#1E1E2C] mt-1 break-all">
           {data.id}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-[#111827] rounded-lg p-3">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+          <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">
             From
           </span>
-          <p className="text-xs font-mono text-blue-400 mt-0.5">
+          <p className="text-xs font-mono font-bold text-[#3B8FF3] mt-1">
             {data.source}
           </p>
         </div>
-        <div className="bg-[#111827] rounded-lg p-3">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <div className="bg-teal-50 rounded-xl p-3 border border-teal-100">
+          <span className="text-[10px] font-semibold text-teal-600 uppercase tracking-wider">
             To
           </span>
-          <p className="text-xs font-mono text-emerald-400 mt-0.5">
+          <p className="text-xs font-mono font-bold text-[#34B1AA] mt-1">
             {data.target}
           </p>
         </div>
       </div>
 
-      <div className="bg-[#111827] rounded-lg p-3">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+      <div className="bg-[#F5F6FA] rounded-xl p-3.5 border border-[#E8EAF0]">
+        <span className="text-[10px] font-semibold text-[#7C8197] uppercase tracking-wider">
           Amount
         </span>
-        <p className="text-lg font-bold text-white mt-0.5">
+        <p className="text-xl font-extrabold text-[#1E1E2C] mt-1">
           ${data.amount?.toLocaleString()}
         </p>
       </div>
 
-      <div className="bg-[#111827] rounded-lg p-3">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+      <div className="bg-[#F5F6FA] rounded-xl p-3.5 border border-[#E8EAF0]">
+        <span className="text-[10px] font-semibold text-[#7C8197] uppercase tracking-wider">
           Timestamp
         </span>
-        <p className="text-xs text-slate-300 mt-0.5">
+        <p className="text-xs font-medium text-[#3A3F52] mt-1">
           {new Date(data.timestamp).toLocaleString()}
         </p>
       </div>
 
       {data.isSuspiciousEdge && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3.5">
           <div className="flex items-center gap-2">
-            <Target className="w-3.5 h-3.5 text-red-400" />
-            <span className="text-xs font-medium text-red-400">
+            <Target className="w-4 h-4 text-red-500" />
+            <span className="text-[13px] font-semibold text-red-600">
               Suspicious Transaction
             </span>
           </div>
-          <p className="text-[10px] text-red-400/70 mt-1">
+          <p className="text-[11px] text-red-500/80 mt-1">
             Part of a detected fraud pattern
           </p>
         </div>

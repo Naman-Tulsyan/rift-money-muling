@@ -54,9 +54,9 @@ export default function StatsCards({
       label: "Total Accounts",
       value: graphStats?.nodes_count ?? "—",
       icon: Users,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/10",
-      borderColor: "border-blue-500/20",
+      color: "text-[#3B8FF3]",
+      bgColor: "bg-[#3B8FF3]/10",
+      borderColor: "border-[#3B8FF3]/20",
       change: graphStats ? `${graphStats.unique_accounts} unique` : undefined,
       changeType: "neutral",
     },
@@ -64,9 +64,9 @@ export default function StatsCards({
       label: "Transactions",
       value: graphStats?.edges_count ?? "—",
       icon: ArrowRightLeft,
-      color: "text-cyan-400",
-      bgColor: "bg-cyan-500/10",
-      borderColor: "border-cyan-500/20",
+      color: "text-[#34B1AA]",
+      bgColor: "bg-[#34B1AA]/10",
+      borderColor: "border-[#34B1AA]/20",
     },
     {
       label: "Total Volume",
@@ -74,7 +74,7 @@ export default function StatsCards({
         ? `$${graphStats.total_amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
         : "—",
       icon: DollarSign,
-      color: "text-emerald-400",
+      color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
       borderColor: "border-emerald-500/20",
     },
@@ -84,8 +84,8 @@ export default function StatsCards({
       icon: AlertTriangle,
       color:
         ringStats && ringStats.total_rings > 0
-          ? "text-red-400"
-          : "text-emerald-400",
+          ? "text-red-500"
+          : "text-emerald-500",
       bgColor:
         ringStats && ringStats.total_rings > 0
           ? "bg-red-500/10"
@@ -103,8 +103,8 @@ export default function StatsCards({
       icon: Shield,
       color:
         suspicionStats && suspicionStats.high_risk > 0
-          ? "text-red-400"
-          : "text-emerald-400",
+          ? "text-red-500"
+          : "text-emerald-500",
       bgColor:
         suspicionStats && suspicionStats.high_risk > 0
           ? "bg-red-500/10"
@@ -120,9 +120,9 @@ export default function StatsCards({
         ? `${(ringStats.average_ring_risk * 100).toFixed(0)}%`
         : "—",
       icon: Target,
-      color: "text-amber-400",
-      bgColor: "bg-amber-500/10",
-      borderColor: "border-amber-500/20",
+      color: "text-[#E0B50F]",
+      bgColor: "bg-[#E0B50F]/10",
+      borderColor: "border-[#E0B50F]/20",
     },
     {
       label: "Ring Volume",
@@ -130,7 +130,7 @@ export default function StatsCards({
         ? `$${ringStats.total_ring_amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
         : "—",
       icon: TrendingUp,
-      color: "text-purple-400",
+      color: "text-purple-500",
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500/20",
     },
@@ -138,9 +138,9 @@ export default function StatsCards({
       label: "Flagged Accounts",
       value: suspicionStats?.total_accounts ?? "—",
       icon: Activity,
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/10",
-      borderColor: "border-orange-500/20",
+      color: "text-[#F29F67]",
+      bgColor: "bg-[#F29F67]/10",
+      borderColor: "border-[#F29F67]/20",
       change: suspicionStats
         ? `${suspicionStats.medium_risk} medium risk`
         : undefined,
@@ -158,7 +158,7 @@ export default function StatsCards({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, duration: 0.3 }}
-            className={`card-hover bg-[#1a2332] rounded-xl border ${card.borderColor} p-4 relative overflow-hidden`}
+            className={`card-hover bg-white rounded-xl border ${card.borderColor} p-4 relative overflow-hidden shadow-sm`}
           >
             {/* Background glow */}
             <div
@@ -173,18 +173,18 @@ export default function StatsCards({
                   <Icon className={`w-4.5 h-4.5 ${card.color}`} />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-white mb-0.5">
+              <div className="text-2xl font-bold text-[#1E1E2C] mb-0.5">
                 {card.value}
               </div>
-              <div className="text-xs text-slate-500">{card.label}</div>
+              <div className="text-xs text-[#7C8197]">{card.label}</div>
               {card.change && (
                 <div
                   className={`mt-2 text-xs flex items-center gap-1 ${
                     card.changeType === "up"
-                      ? "text-red-400"
+                      ? "text-red-500"
                       : card.changeType === "down"
-                        ? "text-emerald-400"
-                        : "text-slate-500"
+                        ? "text-emerald-500"
+                        : "text-[#7C8197]"
                   }`}
                 >
                   {card.change}
