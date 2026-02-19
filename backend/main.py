@@ -733,6 +733,109 @@ def detect_layered_networks(
     return results
 
 
+# ---------------------------------------------------------------------------
+# Fraud Ring Aggregation
+# ---------------------------------------------------------------------------
+
+_RISK_BASE_SCORES: Dict[str, int] = {
+    "cycle": 90,
+    "smurfing_fan_in": 85,
+    "smurfing_fan_out": 85,
+    "layered": 80,
+}
+
+
+def combine_all_rings(
+    cycle_rings: List[SuspiciousRing],
+    smurfing_rings: List[SuspiciousRing],
+    layered_rings: List[SuspiciousRing],
+) -> List[SuspiciousRing]:
+    """
+    Merge all detector outputs into a single list without mutation.
+    Each ring is treated independently — no merging of overlapping members.
+    """
+    return list(cycle_rings) + list(smurfing_rings) + list(layered_rings)
+
+
+def calculate_aggregated_risk_score(pattern: str, member_count: int) -> int:
+    """
+    Compute an integer risk score using the fixed formula:
+        risk_score = base_score + min(10, number_of_members)
+    Clamped to a maximum of 100.
+    """
+    base = _RISK_BASE_SCORES.get(pattern, 80)
+    return min(100, base + min(10, member_count))
+
+
+def assign_risk_scores(rings: List[SuspiciousRing]) -> List[SuspiciousRing]:
+    """
+    Return a new list with risk_score populated using the aggregation formula.
+    Original objects are not mutated.
+    """
+    scored: List[SuspiciousRing] = []
+    for ring in rings:
+        scored.append(
+            SuspiciousRing(
+                ring_id=ring.ring_id,
+                members=ring.members,
+                pattern=ring.pattern,
+                risk_score=calculate_aggregated_risk_score(ring.pattern, len(ring.members)),
+                total_amount=ring.total_amount,
+                transaction_count=ring.transaction_count,
+            )
+        )
+    return scored
+
+
+def sort_rings_by_risk(rings: List[SuspiciousRing]) -> List[SuspiciousRing]:
+    """
+    Sort rings in descending order of risk_score.
+    Uses a stable sort so rings with equal scores retain their original order.
+    """
+    return sorted(rings, key=lambda r: r.risk_score or 0, reverse=True)
+
+
+def assign_ring_ids(rings: List[SuspiciousRing]) -> List[SuspiciousRing]:
+    """
+    Overwrite ring IDs with deterministic sequential IDs: RING_001, RING_002, …
+    """
+    result: List[SuspiciousRing] = []
+    for idx, ring in enumerate(rings, start=1):
+        result.append(
+            SuspiciousRing(
+                ring_id=f"RING_{idx:03}",
+                members=ring.members,
+                pattern=ring.pattern,
+                risk_score=ring.risk_score,
+                total_amount=ring.total_amount,
+                transaction_count=ring.transaction_count,
+            )
+        )
+    return result
+
+
+def aggregate_fraud_rings(
+    cycle_rings: List[SuspiciousRing],
+    smurfing_rings: List[SuspiciousRing],
+    layered_rings: List[SuspiciousRing],
+) -> List[SuspiciousRing]:
+    """
+    Main aggregation function.
+
+    1. Combine rings from all detectors
+    2. Compute risk scores using the fixed formula
+    3. Sort by risk score descending (stable)
+    4. Assign deterministic sequential ring IDs
+
+    Returns a final, deterministic list of SuspiciousRing objects.
+    """
+    combined = combine_all_rings(cycle_rings, smurfing_rings, layered_rings)
+    scored = assign_risk_scores(combined)
+    ordered = sort_rings_by_risk(scored)
+    final = assign_ring_ids(ordered)
+    return final
+
+
 @app.post("/build-graph", response_model=GraphAnalysisResponse)
 async def build_graph(file: UploadFile = File(...)) -> GraphAnalysisResponse:
     """
@@ -801,20 +904,14 @@ async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetection
         # Build the graph
         G = build_transaction_graph(csv_response.valid_transactions)
         
-        # Detect cycle-based rings
-        suspicious_rings = cycle_detector(G)
-        
-        # Detect smurfing rings
+        # Detect rings from all three detectors
         outgoing_map, incoming_map = create_transaction_maps(G)
+        cycle_rings = cycle_detector(G)
         smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
-        suspicious_rings.extend(smurfing_rings)
-        
-        # Detect layered / shell networks
         layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
-        suspicious_rings.extend(layered_rings)
         
-        # Sort rings by risk score (highest first)
-        suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
+        # Aggregate: score, sort, and assign final IDs
+        suspicious_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings)
         
         # Calculate graph statistics
         graph_stats = {
@@ -826,8 +923,9 @@ async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetection
                 "4_member_rings": len([r for r in suspicious_rings if len(r.members) == 4]),
                 "5_member_rings": len([r for r in suspicious_rings if len(r.members) == 5])
             },
-            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 5.0]),
+            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 70]),
             "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
+            "cycle_rings": len([r for r in suspicious_rings if r.pattern == "cycle"]),
             "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
             "smurfing_fan_out": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_out"]),
             "layered_networks": len([r for r in suspicious_rings if r.pattern == "layered"])
@@ -889,21 +987,15 @@ async def detect_rings_from_existing_data() -> RingDetectionResponse:
             except:
                 continue
         
-        # Build graph and detect rings
+        # Build graph and detect rings from all detectors
         G = build_transaction_graph(valid_transactions)
-        suspicious_rings = cycle_detector(G)
-        
-        # Detect smurfing rings
         outgoing_map, incoming_map = create_transaction_maps(G)
+        cycle_rings = cycle_detector(G)
         smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
-        suspicious_rings.extend(smurfing_rings)
-        
-        # Detect layered / shell networks
         layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
-        suspicious_rings.extend(layered_rings)
         
-        # Sort rings by risk score (highest first)
-        suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
+        # Aggregate: score, sort, and assign final IDs
+        suspicious_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings)
         
         # Calculate graph statistics
         graph_stats = {
@@ -915,8 +1007,9 @@ async def detect_rings_from_existing_data() -> RingDetectionResponse:
                 "4_member_rings": len([r for r in suspicious_rings if len(r.members) == 4]),
                 "5_member_rings": len([r for r in suspicious_rings if len(r.members) == 5])
             },
-            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 5.0]),
+            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 70]),
             "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
+            "cycle_rings": len([r for r in suspicious_rings if r.pattern == "cycle"]),
             "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
             "smurfing_fan_out": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_out"]),
             "layered_networks": len([r for r in suspicious_rings if r.pattern == "layered"]),

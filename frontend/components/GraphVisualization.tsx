@@ -55,14 +55,33 @@ export default function GraphVisualization({
   useEffect(() => {
     if (!cyRef.current || !graphData) return;
 
-    // Create sets of ring members for easy lookup
-    const ringMembers = new Set<string>();
+    // Create sets for different pattern types
+    const cycleMembers = new Set<string>();
+    const fanInMembers = new Set<string>();
+    const fanOutMembers = new Set<string>();
+    const layeredMembers = new Set<string>();
     const highRiskMembers = new Set<string>();
 
     if (suspiciousRings) {
       suspiciousRings.forEach((ring) => {
         ring.members.forEach((member) => {
-          ringMembers.add(member);
+          // Categorize by pattern type
+          switch (ring.pattern) {
+            case "cycle":
+              cycleMembers.add(member);
+              break;
+            case "smurfing_fan_in":
+              fanInMembers.add(member);
+              break;
+            case "smurfing_fan_out":
+              fanOutMembers.add(member);
+              break;
+            case "layered":
+              layeredMembers.add(member);
+              break;
+          }
+
+          // High risk threshold
           if ((ring.risk_score || 0) > 0.7) {
             highRiskMembers.add(member);
           }
@@ -72,22 +91,31 @@ export default function GraphVisualization({
 
     // Prepare nodes and edges for Cytoscape
     const nodes: NodeDefinition[] = graphData.nodes.map((node) => {
-      const isRingMember = ringMembers.has(node.id);
+      const isCycleMember = cycleMembers.has(node.id);
+      const isFanInMember = fanInMembers.has(node.id);
+      const isFanOutMember = fanOutMembers.has(node.id);
+      const isLayeredMember = layeredMembers.has(node.id);
       const isHighRisk = highRiskMembers.has(node.id);
 
       return {
         data: {
           id: node.id,
-          // Only set these properties if they are true to avoid Cytoscape issues
-          ...(isRingMember && { isRingMember: true }),
+          // Set pattern-specific properties
+          ...(isCycleMember && { isCycleMember: true }),
+          ...(isFanInMember && { isFanInMember: true }),
+          ...(isFanOutMember && { isFanOutMember: true }),
+          ...(isLayeredMember && { isLayeredMember: true }),
           ...(isHighRisk && { isHighRisk: true }),
         },
       };
     });
 
     const edges: EdgeDefinition[] = graphData.edges.map((edge) => {
-      const isRingEdge =
-        ringMembers.has(edge.source) && ringMembers.has(edge.target);
+      const isSuspiciousEdge =
+        (cycleMembers.has(edge.source) && cycleMembers.has(edge.target)) ||
+        (fanInMembers.has(edge.source) && fanInMembers.has(edge.target)) ||
+        (fanOutMembers.has(edge.source) && fanOutMembers.has(edge.target)) ||
+        (layeredMembers.has(edge.source) && layeredMembers.has(edge.target));
 
       return {
         data: {
@@ -97,8 +125,8 @@ export default function GraphVisualization({
           amount: edge.amount,
           timestamp: edge.timestamp,
           weight: Math.log10(edge.amount + 1), // For edge thickness
-          // Only set isRingEdge if it's true
-          ...(isRingEdge && { isRingEdge: true }),
+          // Only set isSuspiciousEdge if it's true
+          ...(isSuspiciousEdge && { isSuspiciousEdge: true }),
         },
       };
     });
@@ -178,27 +206,54 @@ export default function GraphVisualization({
           },
         },
         {
-          selector: "node[isRingMember]",
+          selector: "node[isCycleMember]",
           style: {
-            "background-color": "#EF4444", // Changed from orange to red
+            "background-color": "#EF4444", // Bright red for cycle rings
             "border-color": "#DC2626",
             "border-width": "3px",
-            "text-opacity": 1, // Always show labels for ring members
+            "text-opacity": 1, // Always show labels for suspicious members
+          },
+        },
+        {
+          selector: "node[isFanInMember]",
+          style: {
+            "background-color": "#F97316", // Orange-red for fan-in
+            "border-color": "#EA580C",
+            "border-width": "3px",
+            "text-opacity": 1,
+          },
+        },
+        {
+          selector: "node[isFanOutMember]",
+          style: {
+            "background-color": "#EA580C", // Dark orange for fan-out
+            "border-color": "#C2410C",
+            "border-width": "3px",
+            "text-opacity": 1,
+          },
+        },
+        {
+          selector: "node[isLayeredMember]",
+          style: {
+            "background-color": "#DC2626", // Deep red for layered networks
+            "border-color": "#991B1B",
+            "border-width": "3px",
+            "text-opacity": 1,
           },
         },
         {
           selector: "node[isHighRisk]",
           style: {
-            "background-color": "#DC2626", // Darker red for high risk
-            "border-color": "#991B1B",
+            "background-color": "#991B1B", // Darkest red for high risk
+            "border-color": "#7F1D1D",
             "border-width": "4px",
             "text-opacity": 1, // Always show labels for high risk
           },
         },
         {
-          selector: "edge[isRingEdge]",
+          selector: "edge[isSuspiciousEdge]",
           style: {
-            "line-color": "#EF4444", // Changed from orange to red
+            "line-color": "#EF4444", // Red for suspicious edges
             "target-arrow-color": "#EF4444",
             width: "mapData(weight, 0, 6, 2, 5)",
             opacity: 1,
@@ -239,8 +294,13 @@ export default function GraphVisualization({
           avoidOverlap: true,
           minNodeSpacing: 50,
           concentric: function (node: any) {
-            // Put suspicious ring members in inner circles
-            return node.data("isRingMember") ? 2 : 1;
+            // Put suspicious members in inner circles based on risk level
+            if (node.data("isHighRisk")) return 4; // Highest priority
+            if (node.data("isCycleMember")) return 3;
+            if (node.data("isLayeredMember")) return 3;
+            if (node.data("isFanInMember")) return 2;
+            if (node.data("isFanOutMember")) return 2;
+            return 1; // Normal nodes in outer circle
           },
           levelWidth: function (nodes: any) {
             return nodes.maxDegree() / 2;
@@ -321,8 +381,13 @@ export default function GraphVisualization({
           avoidOverlap: true,
           minNodeSpacing: 50,
           concentric: function (node: any) {
-            // Put suspicious ring members in inner circles
-            return node.data("isRingMember") ? 2 : 1;
+            // Put suspicious members in inner circles based on risk level
+            if (node.data("isHighRisk")) return 4;
+            if (node.data("isCycleMember")) return 3;
+            if (node.data("isLayeredMember")) return 3;
+            if (node.data("isFanInMember")) return 2;
+            if (node.data("isFanOutMember")) return 2;
+            return 1;
           },
           levelWidth: function (nodes: any) {
             return nodes.maxDegree() / 2;
@@ -388,7 +453,7 @@ export default function GraphVisualization({
       {suspiciousRings && suspiciousRings.length > 0 && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <h4 className="font-semibold text-red-800 mb-3 flex items-center">
-            🚨 Suspicious Rings Detected ({suspiciousRings.length})
+            🚨 Suspicious Patterns Detected ({suspiciousRings.length})
           </h4>
           <div className="grid gap-3">
             {suspiciousRings.map((ring, index) => (
@@ -399,7 +464,12 @@ export default function GraphVisualization({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="font-medium text-red-700">
-                      Ring {index + 1}
+                      {ring.pattern === "cycle" && "🔄 Cycle Ring"}
+                      {ring.pattern === "smurfing_fan_in" &&
+                        "📥 Fan-In Smurfing"}
+                      {ring.pattern === "smurfing_fan_out" &&
+                        "📤 Fan-Out Smurfing"}
+                      {ring.pattern === "layered" && "🏗️ Layered Network"}
                     </span>
                     <div className="text-sm text-red-600">
                       {ring.members.length} members
@@ -419,6 +489,33 @@ export default function GraphVisualization({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Color Legend */}
+      {suspiciousRings && suspiciousRings.length > 0 && (
+        <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <h4 className="font-semibold text-gray-800 mb-3">
+            🎨 Pattern Color Legend
+          </h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-red-600"></div>
+              <span className="text-sm text-gray-700">Cycle Rings</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-orange-500 border-2 border-orange-600"></div>
+              <span className="text-sm text-gray-700">Fan-In Smurfing</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-orange-600 border-2 border-orange-700"></div>
+              <span className="text-sm text-gray-700">Fan-Out Smurfing</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-red-600 border-2 border-red-800"></div>
+              <span className="text-sm text-gray-700">Layered Networks</span>
+            </div>
           </div>
         </div>
       )}
@@ -481,7 +578,12 @@ export default function GraphVisualization({
                       .map((ring, index) => (
                         <div key={index} className="bg-red-50 p-2 rounded mt-2">
                           <span className="font-medium text-red-700">
-                            🚨 Suspicious Ring {index + 1}
+                            🚨 {ring.pattern === "cycle" && "Cycle Ring"}
+                            {ring.pattern === "smurfing_fan_in" &&
+                              "Fan-In Smurfing"}
+                            {ring.pattern === "smurfing_fan_out" &&
+                              "Fan-Out Smurfing"}
+                            {ring.pattern === "layered" && "Layered Network"}
                           </span>
                           {ring.risk_score && (
                             <div className="text-sm text-red-600">
@@ -539,10 +641,16 @@ export default function GraphVisualization({
       <div className="mt-4 p-3 bg-blue-50 rounded-lg">
         <p className="text-sm text-blue-800">
           <strong>Interaction Guide:</strong> Blue nodes represent normal
-          accounts, red nodes represent suspicious ring members. Hover over
-          nodes to see labels. Click on nodes (accounts) or edges (transactions)
-          to view details. Use layout buttons to change the graph arrangement.
-          Scroll to zoom, drag to pan.
+          accounts. Suspicious patterns are color-coded:{" "}
+          <span className="text-red-600">Red (Cycle Rings)</span>,{" "}
+          <span className="text-orange-500">Orange (Fan-In Smurfing)</span>,{" "}
+          <span className="text-orange-600">
+            Dark Orange (Fan-Out Smurfing)
+          </span>
+          , <span className="text-red-700">Deep Red (Layered Networks)</span>.
+          Hover over nodes to see labels. Click on nodes (accounts) or edges
+          (transactions) to view details. Use layout buttons to change the graph
+          arrangement. Scroll to zoom, drag to pan.
         </p>
       </div>
     </div>
