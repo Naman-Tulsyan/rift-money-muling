@@ -74,7 +74,7 @@ export default function GraphVisualization({
     const nodes: NodeDefinition[] = graphData.nodes.map((node) => {
       const isRingMember = ringMembers.has(node.id);
       const isHighRisk = highRiskMembers.has(node.id);
-      
+
       return {
         data: {
           id: node.id,
@@ -86,8 +86,9 @@ export default function GraphVisualization({
     });
 
     const edges: EdgeDefinition[] = graphData.edges.map((edge) => {
-      const isRingEdge = ringMembers.has(edge.source) && ringMembers.has(edge.target);
-      
+      const isRingEdge =
+        ringMembers.has(edge.source) && ringMembers.has(edge.target);
+
       return {
         data: {
           id: edge.id,

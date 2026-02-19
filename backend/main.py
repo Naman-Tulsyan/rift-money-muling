@@ -587,6 +587,152 @@ def smurfing_detector(
     return results
 
 
+# ---------------------------------------------------------------------------
+# Layered / Shell Network Detection (deterministic, rule-based)
+# ---------------------------------------------------------------------------
+
+_LAYERED_MIN_PATH_LEN = 3   # minimum edges in the chain
+_LAYERED_MAX_PATH_LEN = 5   # maximum edges in the chain
+_LAYERED_INTERMEDIATE_MIN_DEGREE = 2
+_LAYERED_INTERMEDIATE_MAX_DEGREE = 3
+
+
+def total_degree(
+    account_id: str,
+    incoming_map: Dict[str, List[Dict]],
+    outgoing_map: Dict[str, List[Dict]],
+) -> int:
+    """
+    Return the total transaction count (incoming + outgoing) for an account.
+    """
+    return len(incoming_map.get(account_id, [])) + len(outgoing_map.get(account_id, []))
+
+
+def to_simple_digraph(G: nx.MultiDiGraph) -> nx.DiGraph:
+    """
+    Convert a MultiDiGraph to a simple DiGraph (one edge per (u, v) pair).
+    The original graph is NOT modified.
+    """
+    simple = nx.DiGraph()
+    for u, v in G.edges():
+        simple.add_edge(u, v)
+    return simple
+
+
+def detect_layered_networks(
+    G: nx.MultiDiGraph,
+    incoming_map: Dict[str, List[Dict]],
+    outgoing_map: Dict[str, List[Dict]],
+) -> List[SuspiciousRing]:
+    """
+    Detect layered (shell) networks using bounded DFS on a simplified DiGraph.
+
+    A layered network is a directed simple path of 3-5 edges where every
+    *intermediate* node (excluding the start and end) satisfies:
+      - total degree (incoming + outgoing tx count) is between 2 and 3 inclusive
+      - is NOT a merchant (total tx count <= 100)
+
+    Returns a deduplicated, deterministically ordered list of SuspiciousRing.
+    """
+    simple = to_simple_digraph(G)
+
+    # Pre-compute degrees and merchant status for every node so we avoid
+    # repeated dict lookups during the DFS.
+    node_degree: Dict[str, int] = {}
+    node_is_merchant: Dict[str, bool] = {}
+    for node in simple.nodes():
+        node_degree[node] = total_degree(node, incoming_map, outgoing_map)
+        node_is_merchant[node] = is_merchant(node, incoming_map, outgoing_map)
+
+    def _valid_intermediate(node: str) -> bool:
+        """Check if a node qualifies as a valid intermediate in a layered path."""
+        deg = node_degree[node]
+        return (
+            _LAYERED_INTERMEDIATE_MIN_DEGREE <= deg <= _LAYERED_INTERMEDIATE_MAX_DEGREE
+            and not node_is_merchant[node]
+        )
+
+    # Collect all valid paths using bounded DFS.
+    # A path with `k` edges has `k + 1` nodes.
+    # Path lengths of interest: 3..5 edges → 4..6 nodes.
+    seen_member_sets: set[frozenset[str]] = set()
+    raw_rings: List[Dict[str, Any]] = []
+
+    # Iterate over all potential start nodes in sorted order (determinism).
+    for start in sorted(simple.nodes()):
+        # Bounded DFS – stack entries: (current_node, path_so_far)
+        stack: list[tuple[str, list[str]]] = [(start, [start])]
+
+        while stack:
+            current, path = stack.pop()
+            edge_count = len(path) - 1  # number of edges traversed so far
+
+            # If we already have a path in the valid edge-count range,
+            # record it (but continue extending if we haven't hit max).
+            if _LAYERED_MIN_PATH_LEN <= edge_count <= _LAYERED_MAX_PATH_LEN:
+                # Validate all intermediate nodes (indices 1 .. len-2)
+                intermediates_ok = all(
+                    _valid_intermediate(path[i]) for i in range(1, len(path) - 1)
+                )
+                if intermediates_ok:
+                    member_key = frozenset(path)
+                    if member_key not in seen_member_sets:
+                        seen_member_sets.add(member_key)
+                        raw_rings.append({
+                            "members": list(path),  # preserve traversal order
+                            "pattern": "layered",
+                        })
+
+            # Stop extending if we've hit the maximum edge count.
+            if edge_count >= _LAYERED_MAX_PATH_LEN:
+                continue
+
+            # Before extending, check that the NEXT node would be a valid
+            # intermediate (unless it would become the end node of a valid-
+            # length path, in which case it doesn't need the intermediate
+            # check).  We still need to ensure the path stays simple.
+            for neighbor in sorted(simple.successors(current)):
+                if neighbor in path:  # simple path – no repeated nodes
+                    continue
+
+                next_edge_count = edge_count + 1
+
+                # If this neighbor would be an intermediate (i.e., we could
+                # extend further), it must pass the intermediate check.
+                # If next_edge_count is already in valid range, the neighbor
+                # is the *end* node and doesn't need the check – but we
+                # still want to try extending further, so we allow it.
+                is_end_candidate = next_edge_count >= _LAYERED_MIN_PATH_LEN
+                is_extendable = next_edge_count < _LAYERED_MAX_PATH_LEN
+
+                if is_extendable and not is_end_candidate:
+                    # neighbor will definitely be intermediate – must qualify
+                    if not _valid_intermediate(neighbor):
+                        continue
+                elif is_extendable and is_end_candidate:
+                    # neighbor could be end OR intermediate; allow either way
+                    pass
+                # else: next_edge_count == MAX, neighbor is the final end node
+
+                stack.append((neighbor, path + [neighbor]))
+
+    # Sort raw rings deterministically by sorted member tuple for stable IDs.
+    raw_rings.sort(key=lambda r: tuple(sorted(r["members"])))
+
+    # Assign deterministic IDs.
+    results: List[SuspiciousRing] = []
+    for idx, ring in enumerate(raw_rings, start=1):
+        results.append(
+            SuspiciousRing(
+                ring_id=f"RING_LY_{idx:03}",
+                members=sorted(ring["members"]),
+                pattern=ring["pattern"],
+            )
+        )
+
+    return results
+
+
 @app.post("/build-graph", response_model=GraphAnalysisResponse)
 async def build_graph(file: UploadFile = File(...)) -> GraphAnalysisResponse:
     """
@@ -663,6 +809,10 @@ async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetection
         smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
         suspicious_rings.extend(smurfing_rings)
         
+        # Detect layered / shell networks
+        layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
+        suspicious_rings.extend(layered_rings)
+        
         # Sort rings by risk score (highest first)
         suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
         
@@ -679,7 +829,8 @@ async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetection
             "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 5.0]),
             "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
             "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
-            "smurfing_fan_out": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_out"])
+            "smurfing_fan_out": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_out"]),
+            "layered_networks": len([r for r in suspicious_rings if r.pattern == "layered"])
         }
         
         return RingDetectionResponse(
@@ -747,6 +898,10 @@ async def detect_rings_from_existing_data() -> RingDetectionResponse:
         smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
         suspicious_rings.extend(smurfing_rings)
         
+        # Detect layered / shell networks
+        layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
+        suspicious_rings.extend(layered_rings)
+        
         # Sort rings by risk score (highest first)
         suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
         
@@ -764,6 +919,7 @@ async def detect_rings_from_existing_data() -> RingDetectionResponse:
             "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
             "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
             "smurfing_fan_out": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_out"]),
+            "layered_networks": len([r for r in suspicious_rings if r.pattern == "layered"]),
             "average_ring_risk": sum(r.risk_score or 0 for r in suspicious_rings) / len(suspicious_rings) if suspicious_rings else 0
         }
         
