@@ -48,9 +48,8 @@ export default function GraphVisualization({
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<Core | null>(null);
   const [selectedElement, setSelectedElement] = useState<any>(null);
-  const [highlightRings, setHighlightRings] = useState(false);
   const [layoutType, setLayoutType] = useState<
-    "cose" | "circle" | "grid" | "breadthfirst"
+    "cose" | "circle" | "grid" | "breadthfirst" | "concentric"
   >("cose");
 
   useEffect(() => {
@@ -64,7 +63,7 @@ export default function GraphVisualization({
       suspiciousRings.forEach((ring) => {
         ring.members.forEach((member) => {
           ringMembers.add(member);
-          if ((ring.risk_score || 0) > 5.0) {
+          if ((ring.risk_score || 0) > 0.7) {
             highRiskMembers.add(member);
           }
         });
@@ -72,26 +71,36 @@ export default function GraphVisualization({
     }
 
     // Prepare nodes and edges for Cytoscape
-    const nodes: NodeDefinition[] = graphData.nodes.map((node) => ({
-      data: {
-        id: node.id,
-        isRingMember: ringMembers.has(node.id),
-        isHighRisk: highRiskMembers.has(node.id),
-      },
-    }));
+    const nodes: NodeDefinition[] = graphData.nodes.map((node) => {
+      const isRingMember = ringMembers.has(node.id);
+      const isHighRisk = highRiskMembers.has(node.id);
+      
+      return {
+        data: {
+          id: node.id,
+          // Only set these properties if they are true to avoid Cytoscape issues
+          ...(isRingMember && { isRingMember: true }),
+          ...(isHighRisk && { isHighRisk: true }),
+        },
+      };
+    });
 
-    const edges: EdgeDefinition[] = graphData.edges.map((edge) => ({
-      data: {
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        amount: edge.amount,
-        timestamp: edge.timestamp,
-        weight: Math.log10(edge.amount + 1), // For edge thickness
-        isRingEdge:
-          ringMembers.has(edge.source) && ringMembers.has(edge.target),
-      },
-    }));
+    const edges: EdgeDefinition[] = graphData.edges.map((edge) => {
+      const isRingEdge = ringMembers.has(edge.source) && ringMembers.has(edge.target);
+      
+      return {
+        data: {
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          amount: edge.amount,
+          timestamp: edge.timestamp,
+          weight: Math.log10(edge.amount + 1), // For edge thickness
+          // Only set isRingEdge if it's true
+          ...(isRingEdge && { isRingEdge: true }),
+        },
+      };
+    });
 
     // Initialize Cytoscape
     cyInstance.current = cytoscape({
@@ -106,15 +115,25 @@ export default function GraphVisualization({
             "text-valign": "center",
             "text-halign": "center",
             color: "#ffffff",
-            "font-size": "12px",
+            "font-size": "10px",
             "font-weight": "bold",
-            width: "30px",
-            height: "30px",
+            width: "40px",
+            height: "40px",
             "border-width": "2px",
             "border-color": "#1E40AF",
             "text-background-color": "#000000",
-            "text-background-opacity": 0.7,
-            "text-background-padding": "2px",
+            "text-background-opacity": 0.8,
+            "text-background-padding": "3px",
+            "text-opacity": 0, // Hide labels by default
+            "min-zoomed-font-size": 8,
+          },
+        },
+        {
+          selector: "node:hover",
+          style: {
+            "text-opacity": 1, // Show label on hover
+            "border-width": "3px",
+            "z-index": 999,
           },
         },
         {
@@ -122,18 +141,29 @@ export default function GraphVisualization({
           style: {
             "background-color": "#EF4444",
             "border-color": "#DC2626",
-            "border-width": "3px",
+            "border-width": "4px",
+            "text-opacity": 1, // Show label when selected
+            "z-index": 999,
           },
         },
         {
           selector: "edge",
           style: {
-            width: "mapData(weight, 0, 6, 1, 8)",
-            "line-color": "#64748B",
-            "target-arrow-color": "#64748B",
+            width: "mapData(weight, 0, 6, 1, 4)",
+            "line-color": "#94A3B8",
+            "target-arrow-color": "#94A3B8",
             "target-arrow-shape": "triangle",
             "curve-style": "bezier",
-            opacity: 0.8,
+            opacity: 0.6,
+            "arrow-scale": 0.8,
+          },
+        },
+        {
+          selector: "edge:hover",
+          style: {
+            opacity: 0.9,
+            "line-color": "#64748B",
+            "target-arrow-color": "#64748B",
           },
         },
         {
@@ -141,41 +171,80 @@ export default function GraphVisualization({
           style: {
             "line-color": "#EF4444",
             "target-arrow-color": "#EF4444",
-            width: "mapData(weight, 0, 6, 2, 10)",
+            width: "mapData(weight, 0, 6, 2, 6)",
             opacity: 1,
+            "z-index": 999,
           },
         },
         {
           selector: "node[isRingMember]",
           style: {
-            "background-color": "#F59E0B",
-            "border-color": "#D97706",
+            "background-color": "#EF4444", // Changed from orange to red
+            "border-color": "#DC2626",
             "border-width": "3px",
+            "text-opacity": 1, // Always show labels for ring members
           },
         },
         {
           selector: "node[isHighRisk]",
           style: {
-            "background-color": "#EF4444",
-            "border-color": "#DC2626",
+            "background-color": "#DC2626", // Darker red for high risk
+            "border-color": "#991B1B",
             "border-width": "4px",
+            "text-opacity": 1, // Always show labels for high risk
           },
         },
         {
           selector: "edge[isRingEdge]",
           style: {
-            "line-color": "#F59E0B",
-            "target-arrow-color": "#F59E0B",
-            width: "mapData(weight, 0, 6, 2, 10)",
+            "line-color": "#EF4444", // Changed from orange to red
+            "target-arrow-color": "#EF4444",
+            width: "mapData(weight, 0, 6, 2, 5)",
             opacity: 1,
+            "z-index": 100,
           },
         },
       ],
       layout: {
         name: layoutType,
-        padding: 30,
+        padding: 60, // Increased padding
         animate: true,
         animationDuration: 1000,
+        // Layout-specific configurations for better spacing
+        ...(layoutType === "cose" && {
+          nodeRepulsion: 8000,
+          edgeElasticity: 100,
+          nestingFactor: 1.2,
+          gravity: 1,
+          numIter: 1000,
+          nodeOverlap: 4,
+          idealEdgeLength: 100,
+        }),
+        ...(layoutType === "grid" && {
+          spacing: 80,
+          avoidOverlap: true,
+        }),
+        ...(layoutType === "circle" && {
+          spacing: 100,
+          avoidOverlap: true,
+        }),
+        ...(layoutType === "breadthfirst" && {
+          spacing: 80,
+          circle: false,
+          avoidOverlap: true,
+        }),
+        ...(layoutType === "concentric" && {
+          spacing: 100,
+          avoidOverlap: true,
+          minNodeSpacing: 50,
+          concentric: function (node: any) {
+            // Put suspicious ring members in inner circles
+            return node.data("isRingMember") ? 2 : 1;
+          },
+          levelWidth: function (nodes: any) {
+            return nodes.maxDegree() / 2;
+          },
+        }),
       },
     });
 
@@ -204,71 +273,62 @@ export default function GraphVisualization({
       }
     });
 
-    // Update ring highlighting based on toggle
-    const updateRingHighlighting = () => {
-      if (highlightRings && suspiciousRings && suspiciousRings.length > 0) {
-        cyInstance.current?.nodes().forEach((node: any) => {
-          const nodeId = node.data("id");
-          const isInRing = suspiciousRings.some((ring: any) =>
-            ring.members.includes(nodeId),
-          );
+    // Ring members are always colored based on the initial data
+    // The highlightRings toggle can be used for additional features in the future
+    // but doesn't affect the basic coloring
 
-          if (isInRing) {
-            node.data("isRingMember", true);
-            // Check if it's in a high-risk ring
-            const isHighRisk = suspiciousRings.some(
-              (ring: any) =>
-                ring.members.includes(nodeId) &&
-                ring.risk_score &&
-                ring.risk_score > 0.7,
-            );
-            node.data("isHighRisk", isHighRisk);
-          } else {
-            node.data("isRingMember", false);
-            node.data("isHighRisk", false);
-          }
-        });
-
-        // Update edges that are part of rings
-        cyInstance.current?.edges().forEach((edge: any) => {
-          const sourceId = edge.source().id();
-          const targetId = edge.target().id();
-          const isRingEdge = suspiciousRings.some(
-            (ring: any) =>
-              ring.members.includes(sourceId) &&
-              ring.members.includes(targetId),
-          );
-          edge.data("isRingEdge", isRingEdge);
-        });
-      } else {
-        // Remove highlighting
-        cyInstance.current?.nodes().forEach((node: any) => {
-          node.data("isRingMember", false);
-          node.data("isHighRisk", false);
-        });
-        cyInstance.current?.edges().forEach((edge: any) => {
-          edge.data("isRingEdge", false);
-        });
-      }
-    };
-
-    updateRingHighlighting();
+    // No need to call updateRingHighlighting since ring coloring is set in initial data
 
     return () => {
       cyInstance.current?.destroy();
     };
-  }, [graphData, layoutType, suspiciousRings, highlightRings]);
+  }, [graphData, layoutType, suspiciousRings]);
 
   const handleLayoutChange = (newLayout: typeof layoutType) => {
     setLayoutType(newLayout);
     if (cyInstance.current) {
-      cyInstance.current
-        .layout({
-          name: newLayout,
-          animate: true,
-          animationDuration: 1000,
-        })
-        .run();
+      const layoutConfig = {
+        name: newLayout,
+        animate: true,
+        animationDuration: 1000,
+        padding: 60,
+        // Layout-specific configurations for better spacing
+        ...(newLayout === "cose" && {
+          nodeRepulsion: 80000,
+          edgeElasticity: 100,
+          nestingFactor: 1,
+          gravity: 1,
+          numIter: 1000,
+          nodeOverlap: 0,
+          idealEdgeLength: 100,
+        }),
+        ...(newLayout === "grid" && {
+          spacing: 80,
+          avoidOverlap: true,
+        }),
+        ...(newLayout === "circle" && {
+          spacing: 100,
+          avoidOverlap: true,
+        }),
+        ...(newLayout === "breadthfirst" && {
+          spacing: 80,
+          circle: false,
+          avoidOverlap: true,
+        }),
+        ...(newLayout === "concentric" && {
+          spacing: 100,
+          avoidOverlap: true,
+          minNodeSpacing: 50,
+          concentric: function (node: any) {
+            // Put suspicious ring members in inner circles
+            return node.data("isRingMember") ? 2 : 1;
+          },
+          levelWidth: function (nodes: any) {
+            return nodes.maxDegree() / 2;
+          },
+        }),
+      };
+      cyInstance.current.layout(layoutConfig).run();
     }
   };
 
@@ -367,7 +427,9 @@ export default function GraphVisualization({
         <span className="text-sm font-medium text-gray-700 flex items-center">
           Layout:
         </span>
-        {(["cose", "circle", "grid", "breadthfirst"] as const).map((layout) => (
+        {(
+          ["cose", "circle", "grid", "breadthfirst", "concentric"] as const
+        ).map((layout) => (
           <button
             key={layout}
             onClick={() => handleLayoutChange(layout)}
@@ -380,23 +442,6 @@ export default function GraphVisualization({
             {layout.charAt(0).toUpperCase() + layout.slice(1)}
           </button>
         ))}
-
-        {suspiciousRings && suspiciousRings.length > 0 && (
-          <>
-            <span className="text-gray-400 mx-2">|</span>
-            <button
-              onClick={() => setHighlightRings(!highlightRings)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                highlightRings
-                  ? "bg-red-600 text-white"
-                  : "bg-red-100 hover:bg-red-200 text-red-700"
-              }`}
-            >
-              🚨 {highlightRings ? "Hide" : "Show"} Rings (
-              {suspiciousRings.length})
-            </button>
-          </>
-        )}
       </div>
 
       <div className="flex gap-4">
@@ -405,7 +450,7 @@ export default function GraphVisualization({
           <div
             ref={cyRef}
             className="w-full h-96 border border-gray-300 rounded-lg bg-gray-50"
-            style={{ minHeight: "400px" }}
+            style={{ minHeight: "500px" }}
           />
         </div>
 
@@ -492,9 +537,11 @@ export default function GraphVisualization({
 
       <div className="mt-4 p-3 bg-blue-50 rounded-lg">
         <p className="text-sm text-blue-800">
-          <strong>Interaction Guide:</strong> Click on nodes (accounts) or edges
-          (transactions) to view details. Use layout buttons to change the graph
-          arrangement. Scroll to zoom, drag to pan.
+          <strong>Interaction Guide:</strong> Blue nodes represent normal
+          accounts, red nodes represent suspicious ring members. Hover over
+          nodes to see labels. Click on nodes (accounts) or edges (transactions)
+          to view details. Use layout buttons to change the graph arrangement.
+          Scroll to zoom, drag to pan.
         </p>
       </div>
     </div>

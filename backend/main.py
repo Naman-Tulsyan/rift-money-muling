@@ -399,6 +399,194 @@ def create_transaction_maps(G: nx.MultiDiGraph) -> tuple[Dict[str, List[Dict]], 
     return outgoing_map, incoming_map
 
 
+# ---------------------------------------------------------------------------
+# Smurfing Detection (deterministic, rule-based)
+# ---------------------------------------------------------------------------
+from datetime import timedelta
+
+_SMURFING_WINDOW = timedelta(hours=72)
+_SMURFING_MIN_COUNTERPARTIES = 10
+_MERCHANT_TX_THRESHOLD = 100
+
+
+def is_merchant(
+    account_id: str,
+    incoming_map: Dict[str, List[Dict]],
+    outgoing_map: Dict[str, List[Dict]],
+) -> bool:
+    """
+    Return True if *account_id* has more than 100 total transactions
+    (incoming + outgoing), marking it as a merchant to be excluded
+    from smurfing detection.
+    """
+    incoming_count = len(incoming_map.get(account_id, []))
+    outgoing_count = len(outgoing_map.get(account_id, []))
+    return (incoming_count + outgoing_count) > _MERCHANT_TX_THRESHOLD
+
+
+def _parse_ts(ts) -> datetime:
+    """Parse a timestamp that may be a datetime or an ISO-format string."""
+    if isinstance(ts, datetime):
+        return ts
+    return datetime.fromisoformat(ts)
+
+
+def detect_fan_in(
+    incoming_map: Dict[str, List[Dict]],
+    outgoing_map: Dict[str, List[Dict]],
+) -> List[Dict[str, Any]]:
+    """
+    Detect fan-in smurfing: 10+ unique senders sending to the SAME
+    receiver within a sliding 72-hour window.
+
+    Returns a list of ring dicts (without ring_id; those are assigned
+    later by smurfing_detector).
+    """
+    rings: List[Dict[str, Any]] = []
+    seen_accounts: set[str] = set()
+
+    for receiver_id in sorted(incoming_map.keys()):  # sorted for determinism
+        if receiver_id in seen_accounts:
+            continue
+        if is_merchant(receiver_id, incoming_map, outgoing_map):
+            continue
+
+        txns = incoming_map[receiver_id]
+        if len(txns) < _SMURFING_MIN_COUNTERPARTIES:
+            continue  # fast path – not enough txns at all
+
+        # Parse timestamps once
+        parsed: List[tuple[datetime, str]] = [
+            (_parse_ts(tx["timestamp"]), tx["sender_id"]) for tx in txns
+        ]
+
+        # Sliding-window with a sender frequency counter
+        sender_freq: Dict[str, int] = {}
+        left = 0
+        best_unique = 0
+        best_left = 0
+        best_right = 0
+
+        for right in range(len(parsed)):
+            sender = parsed[right][1]
+            sender_freq[sender] = sender_freq.get(sender, 0) + 1
+
+            # Shrink the window from the left while it exceeds 72 h
+            while parsed[right][0] - parsed[left][0] > _SMURFING_WINDOW:
+                old_sender = parsed[left][1]
+                sender_freq[old_sender] -= 1
+                if sender_freq[old_sender] == 0:
+                    del sender_freq[old_sender]
+                left += 1
+
+            if len(sender_freq) > best_unique:
+                best_unique = len(sender_freq)
+                best_left = left
+                best_right = right
+
+        if best_unique >= _SMURFING_MIN_COUNTERPARTIES:
+            senders_in_window = {
+                parsed[i][1] for i in range(best_left, best_right + 1)
+            }
+            members = sorted(senders_in_window | {receiver_id})
+            seen_accounts.add(receiver_id)
+            rings.append({
+                "members": members,
+                "pattern": "smurfing_fan_in",
+            })
+
+    return rings
+
+
+def detect_fan_out(
+    outgoing_map: Dict[str, List[Dict]],
+    incoming_map: Dict[str, List[Dict]],
+) -> List[Dict[str, Any]]:
+    """
+    Detect fan-out smurfing: 1 sender sending to 10+ unique receivers
+    within a sliding 72-hour window.
+
+    Returns a list of ring dicts (without ring_id).
+    """
+    rings: List[Dict[str, Any]] = []
+    seen_accounts: set[str] = set()
+
+    for sender_id in sorted(outgoing_map.keys()):  # sorted for determinism
+        if sender_id in seen_accounts:
+            continue
+        if is_merchant(sender_id, incoming_map, outgoing_map):
+            continue
+
+        txns = outgoing_map[sender_id]
+        if len(txns) < _SMURFING_MIN_COUNTERPARTIES:
+            continue
+
+        parsed: List[tuple[datetime, str]] = [
+            (_parse_ts(tx["timestamp"]), tx["receiver_id"]) for tx in txns
+        ]
+
+        receiver_freq: Dict[str, int] = {}
+        left = 0
+        best_unique = 0
+        best_left = 0
+        best_right = 0
+
+        for right in range(len(parsed)):
+            receiver = parsed[right][1]
+            receiver_freq[receiver] = receiver_freq.get(receiver, 0) + 1
+
+            while parsed[right][0] - parsed[left][0] > _SMURFING_WINDOW:
+                old_recv = parsed[left][1]
+                receiver_freq[old_recv] -= 1
+                if receiver_freq[old_recv] == 0:
+                    del receiver_freq[old_recv]
+                left += 1
+
+            if len(receiver_freq) > best_unique:
+                best_unique = len(receiver_freq)
+                best_left = left
+                best_right = right
+
+        if best_unique >= _SMURFING_MIN_COUNTERPARTIES:
+            receivers_in_window = {
+                parsed[i][1] for i in range(best_left, best_right + 1)
+            }
+            members = sorted(receivers_in_window | {sender_id})
+            seen_accounts.add(sender_id)
+            rings.append({
+                "members": members,
+                "pattern": "smurfing_fan_out",
+            })
+
+    return rings
+
+
+def smurfing_detector(
+    incoming_map: Dict[str, List[Dict]],
+    outgoing_map: Dict[str, List[Dict]],
+) -> List[SuspiciousRing]:
+    """
+    Top-level smurfing detector.  Combines fan-in and fan-out results
+    and assigns deterministic ring IDs (RING_SM_001, RING_SM_002, …).
+    """
+    fan_in_rings = detect_fan_in(incoming_map, outgoing_map)
+    fan_out_rings = detect_fan_out(outgoing_map, incoming_map)
+
+    all_raw = fan_in_rings + fan_out_rings
+
+    results: List[SuspiciousRing] = []
+    for idx, raw in enumerate(all_raw, start=1):
+        results.append(
+            SuspiciousRing(
+                ring_id=f"RING_SM_{idx:03}",
+                members=raw["members"],
+                pattern=raw["pattern"],
+            )
+        )
+
+    return results
+
+
 @app.post("/build-graph", response_model=GraphAnalysisResponse)
 async def build_graph(file: UploadFile = File(...)) -> GraphAnalysisResponse:
     """
@@ -467,8 +655,13 @@ async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetection
         # Build the graph
         G = build_transaction_graph(csv_response.valid_transactions)
         
-        # Detect suspicious rings
+        # Detect cycle-based rings
         suspicious_rings = cycle_detector(G)
+        
+        # Detect smurfing rings
+        outgoing_map, incoming_map = create_transaction_maps(G)
+        smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
+        suspicious_rings.extend(smurfing_rings)
         
         # Sort rings by risk score (highest first)
         suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
@@ -484,7 +677,9 @@ async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetection
                 "5_member_rings": len([r for r in suspicious_rings if len(r.members) == 5])
             },
             "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 5.0]),
-            "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings)
+            "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
+            "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
+            "smurfing_fan_out": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_out"])
         }
         
         return RingDetectionResponse(
@@ -547,6 +742,11 @@ async def detect_rings_from_existing_data() -> RingDetectionResponse:
         G = build_transaction_graph(valid_transactions)
         suspicious_rings = cycle_detector(G)
         
+        # Detect smurfing rings
+        outgoing_map, incoming_map = create_transaction_maps(G)
+        smurfing_rings = smurfing_detector(incoming_map, outgoing_map)
+        suspicious_rings.extend(smurfing_rings)
+        
         # Sort rings by risk score (highest first)
         suspicious_rings.sort(key=lambda x: x.risk_score or 0, reverse=True)
         
@@ -562,6 +762,8 @@ async def detect_rings_from_existing_data() -> RingDetectionResponse:
             },
             "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 5.0]),
             "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
+            "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
+            "smurfing_fan_out": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_out"]),
             "average_ring_risk": sum(r.risk_score or 0 for r in suspicious_rings) / len(suspicious_rings) if suspicious_rings else 0
         }
         
