@@ -20,10 +20,21 @@ from ml.predictor import (
 
 app = FastAPI(title="Rift Money Muling API", version="0.1.0")
 
+# Get allowed origins from environment variable or use defaults
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
+if not ALLOWED_ORIGINS or ALLOWED_ORIGINS == [""]:
+    # Default origins for development and common deployment patterns
+    ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://rift-money-muling-zqd4.vercel.app",
+        "https://rift-money-muling-zqd4.vercel.app/"
+    ]
+
 # Add CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rift-money-muling-zqd4.vercel.app/"],  # Configure appropriately for production
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
