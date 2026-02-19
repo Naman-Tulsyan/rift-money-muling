@@ -1,1613 +1,215 @@
 {
   "summary": {
-    "total_accounts": 200,
-    "total_transactions": 1000,
-    "fraud_rings_detected": 0,
-    "suspicious_accounts_count": 200,
+    "total_accounts": 220,
+    "total_transactions": 1018,
+    "fraud_rings_detected": 3,
+    "suspicious_accounts_count": 20,
     "ml_model_active": true,
-    "processing_time_seconds": 0.0326
+    "processing_time_seconds": 1.1377
   },
-  "fraud_rings": [],
+  "fraud_rings": [
+    {
+      "ring_id": "RING_001",
+      "pattern": "smurfing_fan_in",
+      "members": [
+        "ACC_SMURF_1",
+        "ACC_SMURF_10",
+        "ACC_SMURF_11",
+        "ACC_SMURF_12",
+        "ACC_SMURF_2",
+        "ACC_SMURF_3",
+        "ACC_SMURF_4",
+        "ACC_SMURF_5",
+        "ACC_SMURF_6",
+        "ACC_SMURF_7",
+        "ACC_SMURF_8",
+        "ACC_SMURF_9",
+        "ACC_SMURF_HUB"
+      ],
+      "risk_score": 95
+    },
+    {
+      "ring_id": "RING_002",
+      "pattern": "cycle",
+      "members": [
+        "ACC_CYCLE_A",
+        "ACC_CYCLE_B",
+        "ACC_CYCLE_C"
+      ],
+      "risk_score": 93
+    },
+    {
+      "ring_id": "RING_003",
+      "pattern": "layered",
+      "members": [
+        "ACC_SHELL_1",
+        "ACC_SHELL_2",
+        "ACC_SHELL_3",
+        "ACC_SHELL_4"
+      ],
+      "risk_score": 84
+    }
+  ],
   "suspicious_accounts": [
     {
-      "account_id": "ACC1100",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_HUB",
+      "suspicion_score": 47,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 50,
+      "ml_probability": 0.415
     },
     {
-      "account_id": "ACC1101",
-      "suspicion_score": 4,
+      "account_id": "ACC_CYCLE_A",
+      "suspicion_score": 38,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_002",
+      "rule_score": 40,
+      "ml_probability": 0.34
     },
     {
-      "account_id": "ACC1102",
-      "suspicion_score": 4,
+      "account_id": "ACC_CYCLE_B",
+      "suspicion_score": 38,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_002",
+      "rule_score": 40,
+      "ml_probability": 0.34
     },
     {
-      "account_id": "ACC1103",
-      "suspicion_score": 4,
+      "account_id": "ACC_CYCLE_C",
+      "suspicion_score": 38,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_002",
+      "rule_score": 40,
+      "ml_probability": 0.34
     },
     {
-      "account_id": "ACC1105",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_1",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1106",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_10",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1107",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_11",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1108",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_12",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1109",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_2",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1110",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_3",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1111",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_4",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1112",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_5",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1113",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_6",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1114",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_7",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1115",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_8",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1116",
-      "suspicion_score": 4,
+      "account_id": "ACC_SMURF_9",
+      "suspicion_score": 35,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_001",
+      "rule_score": 30,
+      "ml_probability": 0.425
     },
     {
-      "account_id": "ACC1117",
-      "suspicion_score": 4,
+      "account_id": "ACC_SHELL_1",
+      "suspicion_score": 31,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_003",
+      "rule_score": 25,
+      "ml_probability": 0.405
     },
     {
-      "account_id": "ACC1118",
-      "suspicion_score": 4,
+      "account_id": "ACC_SHELL_2",
+      "suspicion_score": 31,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_003",
+      "rule_score": 25,
+      "ml_probability": 0.395
     },
     {
-      "account_id": "ACC1119",
-      "suspicion_score": 4,
+      "account_id": "ACC_SHELL_3",
+      "suspicion_score": 31,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
+      "associated_ring": "RING_003",
+      "rule_score": 25,
+      "ml_probability": 0.395
     },
     {
-      "account_id": "ACC1120",
-      "suspicion_score": 4,
+      "account_id": "ACC_SHELL_4",
+      "suspicion_score": 31,
       "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1121",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1122",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1124",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1125",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1126",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1127",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1128",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1129",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1130",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1131",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1132",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1133",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1134",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1135",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1136",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1137",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1138",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1139",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1140",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1141",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1142",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1144",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1145",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1146",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1147",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1148",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1149",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1151",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1152",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1153",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1154",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1155",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1156",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1157",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1158",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1159",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1160",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1161",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1162",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1163",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1164",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1165",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1166",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1167",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1168",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1169",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1170",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1171",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1172",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1173",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1174",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1175",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1176",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1177",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1178",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1179",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1180",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1181",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1182",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1183",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1184",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1185",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1186",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1187",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1188",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1189",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1190",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1191",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1192",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1193",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1194",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1195",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1196",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1197",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1198",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1199",
-      "suspicion_score": 4,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.095
-    },
-    {
-      "account_id": "ACC1104",
-      "suspicion_score": 3,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.085
-    },
-    {
-      "account_id": "ACC1123",
-      "suspicion_score": 3,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.085
-    },
-    {
-      "account_id": "ACC1143",
-      "suspicion_score": 3,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.085
-    },
-    {
-      "account_id": "ACC1150",
-      "suspicion_score": 3,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.085
-    },
-    {
-      "account_id": "ACC1000",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.05
-    },
-    {
-      "account_id": "ACC1001",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1002",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1003",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1004",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1005",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1006",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1007",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1008",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.05
-    },
-    {
-      "account_id": "ACC1009",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1010",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1011",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1012",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.05
-    },
-    {
-      "account_id": "ACC1013",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1014",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1015",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1016",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1017",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1018",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.05
-    },
-    {
-      "account_id": "ACC1019",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1020",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1021",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1022",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1023",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1024",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1025",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1026",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1027",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1028",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1029",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1030",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1031",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1033",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1034",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1035",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1036",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1037",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1038",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1039",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1040",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1041",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1042",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1043",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.04
-    },
-    {
-      "account_id": "ACC1044",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1045",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1046",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1047",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1048",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1049",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1050",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1051",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1052",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1053",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1054",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1055",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1056",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.05
-    },
-    {
-      "account_id": "ACC1057",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1058",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1059",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1060",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1061",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1062",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1063",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1064",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1065",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1066",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1067",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1068",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1069",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1070",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1071",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1072",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1074",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1075",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1076",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1077",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1078",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1079",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1080",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1081",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1082",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1083",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1084",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1085",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1086",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.05
-    },
-    {
-      "account_id": "ACC1087",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1088",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1089",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1090",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1091",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1092",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1093",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1094",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1095",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.05
-    },
-    {
-      "account_id": "ACC1096",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1097",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1098",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1099",
-      "suspicion_score": 2,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.055
-    },
-    {
-      "account_id": "ACC1032",
-      "suspicion_score": 1,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.03
-    },
-    {
-      "account_id": "ACC1073",
-      "suspicion_score": 1,
-      "risk_level": "LOW",
-      "associated_ring": null,
-      "rule_score": 0,
-      "ml_probability": 0.03
+      "associated_ring": "RING_003",
+      "rule_score": 25,
+      "ml_probability": 0.405
     }
   ]
 }

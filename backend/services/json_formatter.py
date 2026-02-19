@@ -58,7 +58,7 @@ def format_fraud_rings(
             "ring_id": ring["ring_id"],
             "pattern": ring["pattern"],
             "members": list(ring["members"]),
-            "risk_score": round(float(ring["risk_score"]), 4),
+            "risk_score": int(round(float(ring["risk_score"]))),
         })
 
     # Sort by risk_score descending; stable sort preserves insertion order on ties

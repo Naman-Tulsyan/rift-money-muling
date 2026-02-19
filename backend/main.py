@@ -1682,7 +1682,7 @@ async def get_suspicion_scores_existing() -> SuspicionScoreResponse:
 
 def _load_existing_transactions() -> List["Transaction"]:
     """Load and validate transactions from the existing CSV file."""
-    csv_file_path = os.path.join(os.path.dirname(__file__), "transactions.csv")
+    csv_file_path = os.path.join(os.path.dirname(__file__), "transactions_with_demo_fraud.csv")
     if not os.path.exists(csv_file_path):
         raise HTTPException(status_code=404, detail="transactions.csv file not found")
 
@@ -1730,12 +1730,13 @@ def _run_pipeline(transactions: List["Transaction"]) -> Dict[str, Any]:
 
     # 4. Prepare data for the JSON formatter
     # Convert SuspiciousRing objects to plain dicts
+    # risk_score is stored as 0.0–1.0 in SuspiciousRing; convert to 0–100 int
     rings_as_dicts: List[Dict[str, Any]] = [
         {
             "ring_id": r.ring_id,
             "pattern": r.pattern,
             "members": list(r.members),
-            "risk_score": int(r.risk_score or 0),
+            "risk_score": int(round((r.risk_score or 0) * 100)),
         }
         for r in fraud_rings
     ]
@@ -1749,17 +1750,28 @@ def _run_pipeline(transactions: List["Transaction"]) -> Dict[str, Any]:
     ml_probabilities: Dict[str, float] = {}
     final_scores_detail: Dict[str, Dict[str, float]] = {}
 
+    # Only accounts that belong to at least one ring are "suspicious"
+    ring_member_ids: set[str] = set()
+    for r in fraud_rings:
+        ring_member_ids.update(r.members)
+
     if ml_is_available():
         account_features = _extract_pipeline_features(G, fraud_rings)
         ml_probabilities = predict_fraud_probabilities(account_features)
         final_scores_detail = compute_final_scores(rule_scores, ml_probabilities)
-        # Use blended final_score for the report
+        # Use blended final_score, but ONLY for ring members
         account_scores: Dict[str, int] = {
             acct: int(round(detail["final_score"]))
             for acct, detail in final_scores_detail.items()
+            if acct in ring_member_ids
+        }
+        # Also limit ml_probabilities to ring members for report detail
+        ml_probabilities = {
+            acct: prob for acct, prob in ml_probabilities.items()
+            if acct in ring_member_ids
         }
     else:
-        # Fallback: use rule scores only
+        # Fallback: use rule scores only (already ring-members-only)
         account_scores = dict(rule_scores)
 
     # account_ring_map: account_id → first (highest-risk) ring_id or None
