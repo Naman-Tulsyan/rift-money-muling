@@ -119,7 +119,7 @@ export default function CSVUpload() {
       }
 
       const analyzeResponse = await fetch(
-        "https://rift-money-muling-seven.vercel.app//analyze",
+        "https://rift-money-muling-seven.vercel.app/analyze",
         {
           method: "POST",
           body: file ? formData : undefined,
@@ -133,7 +133,7 @@ export default function CSVUpload() {
 
       // Step 2: Download the generated report
       const downloadResponse = await fetch(
-        "https://rift-money-muling-seven.vercel.app//download-report",
+        "https://rift-money-muling-seven.vercel.app/download-report",
       );
 
       if (!downloadResponse.ok) {
@@ -185,7 +185,7 @@ export default function CSVUpload() {
       formData.append("file", file);
 
       const res = await fetch(
-        "https://rift-money-muling-seven.vercel.app//upload-csv",
+        "https://rift-money-muling-seven.vercel.app/upload-csv",
         {
           method: "POST",
           body: formData,
@@ -221,7 +221,7 @@ export default function CSVUpload() {
       formData.append("file", file);
 
       const res = await fetch(
-        "https://rift-money-muling-seven.vercel.app//graph-data",
+        "https://rift-money-muling-seven.vercel.app/graph-data",
         {
           method: "POST",
           body: formData,
@@ -245,7 +245,7 @@ export default function CSVUpload() {
       formData.append("file", file);
 
       const res = await fetch(
-        "https://rift-money-muling-seven.vercel.app//detect-rings",
+        "https://rift-money-muling-seven.vercel.app/detect-rings",
         {
           method: "POST",
           body: formData,
@@ -269,7 +269,7 @@ export default function CSVUpload() {
       formData.append("file", file);
 
       const res = await fetch(
-        "https://rift-money-muling-seven.vercel.app//suspicion-scores",
+        "https://rift-money-muling-seven.vercel.app/suspicion-scores",
         {
           method: "POST",
           body: formData,
@@ -289,14 +289,12 @@ export default function CSVUpload() {
     setLoading(true);
     try {
       const [graphRes, ringRes, scoreRes] = await Promise.all([
+        fetch("https://rift-money-muling-seven.vercel.app/graph-data/existing"),
         fetch(
-          "https://rift-money-muling-seven.vercel.app//graph-data/existing",
+          "https://rift-money-muling-seven.vercel.app/detect-rings/existing",
         ),
         fetch(
-          "https://rift-money-muling-seven.vercel.app//detect-rings/existing",
-        ),
-        fetch(
-          "https://rift-money-muling-seven.vercel.app//suspicion-scores/existing",
+          "https://rift-money-muling-seven.vercel.app/suspicion-scores/existing",
         ),
       ]);
 

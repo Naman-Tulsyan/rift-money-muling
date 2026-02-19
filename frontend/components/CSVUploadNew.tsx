@@ -174,13 +174,13 @@ export default function CSVUpload({
 
         const [graphRes, ringRes, scoreRes] = await Promise.all([
           fetch(
-            "https://rift-money-muling-seven.vercel.app//graph-data/existing",
+            "https://rift-money-muling-seven.vercel.app/graph-data/existing",
           ),
           fetch(
-            "https://rift-money-muling-seven.vercel.app//detect-rings/existing",
+            "https://rift-money-muling-seven.vercel.app/detect-rings/existing",
           ),
           fetch(
-            "https://rift-money-muling-seven.vercel.app//suspicion-scores/existing",
+            "https://rift-money-muling-seven.vercel.app/suspicion-scores/existing",
           ),
         ]);
 
@@ -215,7 +215,7 @@ export default function CSVUpload({
         formData.append("file", file);
 
         const res = await fetch(
-          "https://rift-money-muling-seven.vercel.app//upload-csv",
+          "https://rift-money-muling-seven.vercel.app/upload-csv",
           {
             method: "POST",
             body: formData,
@@ -235,7 +235,7 @@ export default function CSVUpload({
         const graphFormData = new FormData();
         graphFormData.append("file", file);
         const graphRes = await fetch(
-          "https://rift-money-muling-seven.vercel.app//graph-data",
+          "https://rift-money-muling-seven.vercel.app/graph-data",
           {
             method: "POST",
             body: graphFormData,
@@ -251,7 +251,7 @@ export default function CSVUpload({
         const ringFormData = new FormData();
         ringFormData.append("file", file);
         const ringRes = await fetch(
-          "https://rift-money-muling-seven.vercel.app//detect-rings",
+          "https://rift-money-muling-seven.vercel.app/detect-rings",
           {
             method: "POST",
             body: ringFormData,
@@ -267,7 +267,7 @@ export default function CSVUpload({
         const scoreFormData = new FormData();
         scoreFormData.append("file", file);
         const scoreRes = await fetch(
-          "https://rift-money-muling-seven.vercel.app//suspicion-scores",
+          "https://rift-money-muling-seven.vercel.app/suspicion-scores",
           {
             method: "POST",
             body: scoreFormData,
@@ -308,7 +308,7 @@ export default function CSVUpload({
       if (file) formData.append("file", file);
 
       const analyzeResponse = await fetch(
-        "https://rift-money-muling-seven.vercel.app//analyze",
+        "https://rift-money-muling-seven.vercel.app/analyze",
         {
           method: "POST",
           body: file ? formData : undefined,
@@ -321,7 +321,7 @@ export default function CSVUpload({
       }
 
       const downloadResponse = await fetch(
-        "https://rift-money-muling-seven.vercel.app//download-report",
+        "https://rift-money-muling-seven.vercel.app/download-report",
       );
 
       if (!downloadResponse.ok) throw new Error("Failed to download report");
