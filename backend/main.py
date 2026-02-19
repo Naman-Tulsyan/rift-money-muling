@@ -20,26 +20,57 @@ from ml.predictor import (
 
 app = FastAPI(title="Rift Money Muling API", version="0.1.0")
 
-# Get allowed origins from environment variable or use defaults
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
-if not ALLOWED_ORIGINS or ALLOWED_ORIGINS == [""]:
-    # Default origins for development and common deployment patterns
-    ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://rift-money-muling-zqd4.vercel.app",
-        "https://rift-money-muling-zqd4.vercel.app/",
-        "rift-money-muling-zqd4-7puib5lq4-pynamans-projects.vercel.app",
-    ]
+# Configure CORS for deployment
+# Check if we're in production (Vercel sets this automatically)
+IS_PRODUCTION = os.getenv("VERCEL") == "1"
 
-# Add CORS middleware for frontend integration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Get allowed origins from environment variable
+ALLOWED_ORIGINS_STR = os.getenv("ALLOWED_ORIGINS", "")
+
+if ALLOWED_ORIGINS_STR:
+    # Use environment variable if set
+    if ALLOWED_ORIGINS_STR == "*":
+        ALLOWED_ORIGINS = ["*"]
+    else:
+        ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",") if origin.strip()]
+else:
+    # Default origins based on environment
+    if IS_PRODUCTION:
+        # In production, allow all Vercel app domains
+        ALLOWED_ORIGINS = [
+            "https://*.vercel.app",
+            "https://rift-money-muling-zqd4.vercel.app",
+            "https://rift-money-muling-zqd4.vercel.app/",
+        ]
+    else:
+        # Development origins
+        ALLOWED_ORIGINS = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "https://rift-money-muling-zqd4.vercel.app",
+            "https://rift-money-muling-zqd4.vercel.app/",
+        ]
+
+# For production deployment, we'll use a more permissive setup
+if IS_PRODUCTION:
+    # In production, allow any vercel.app subdomain
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"https://.*\.vercel\.app",
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
+else:
+    # Development CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=ALLOWED_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 class Transaction(BaseModel):
@@ -122,13 +153,31 @@ class RingDetectionResponse(BaseModel):
 
 
 @app.get("/")
-def read_root() -> dict[str, str]:
-    return {"message": "Rift Money Muling backend is running"}
+def read_root() -> dict[str, Any]:
+    return {
+        "message": "Rift Money Muling backend is running",
+        "cors_info": {
+            "is_production": IS_PRODUCTION,
+            "allowed_origins": ALLOWED_ORIGINS if not IS_PRODUCTION else "Using regex for *.vercel.app",
+            "vercel_env": os.getenv("VERCEL", "not set"),
+        }
+    }
 
 
 @app.get("/health")
-def health_check() -> dict[str, str]:
-    return {"status": "ok"}
+def health_check() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "cors_configured": True,
+        "environment": "production" if IS_PRODUCTION else "development"
+    }
+
+
+@app.options("/{path:path}")
+def handle_options(path: str):
+    """Handle preflight OPTIONS requests for CORS"""
+    return {"message": "OK"}
 
 
 @app.post("/upload-csv", response_model=CSVValidationResponse)
