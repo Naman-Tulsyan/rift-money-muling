@@ -136,16 +136,19 @@ export default function Home() {
     setAnalyzeLoading(true);
     setReportError(null);
     try {
-      const analyzeResponse = await fetch("http://localhost:8000/analyze", {
-        method: "POST",
-      });
+      const analyzeResponse = await fetch(
+        "https://rift-money-muling-seven.vercel.app//analyze",
+        {
+          method: "POST",
+        },
+      );
       if (!analyzeResponse.ok) {
         const errorData = await analyzeResponse.json();
         throw new Error(errorData.detail || "Analysis failed");
       }
 
       const downloadResponse = await fetch(
-        "http://localhost:8000/download-report",
+        "https://rift-money-muling-seven.vercel.app//download-report",
       );
       if (!downloadResponse.ok) throw new Error("Failed to download report");
 
@@ -456,12 +459,14 @@ export default function Home() {
                       try {
                         const [graphRes, ringRes, scoreRes] = await Promise.all(
                           [
-                            fetch("http://localhost:8000/graph-data/existing"),
                             fetch(
-                              "http://localhost:8000/detect-rings/existing",
+                              "https://rift-money-muling-seven.vercel.app//graph-data/existing",
                             ),
                             fetch(
-                              "http://localhost:8000/suspicion-scores/existing",
+                              "https://rift-money-muling-seven.vercel.app//detect-rings/existing",
+                            ),
+                            fetch(
+                              "https://rift-money-muling-seven.vercel.app//suspicion-scores/existing",
                             ),
                           ],
                         );

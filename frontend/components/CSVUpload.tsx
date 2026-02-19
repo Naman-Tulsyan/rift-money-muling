@@ -118,10 +118,13 @@ export default function CSVUpload() {
         formData.append("file", file);
       }
 
-      const analyzeResponse = await fetch("http://localhost:8000/analyze", {
-        method: "POST",
-        body: file ? formData : undefined,
-      });
+      const analyzeResponse = await fetch(
+        "https://rift-money-muling-seven.vercel.app//analyze",
+        {
+          method: "POST",
+          body: file ? formData : undefined,
+        },
+      );
 
       if (!analyzeResponse.ok) {
         const errorData = await analyzeResponse.json();
@@ -130,7 +133,7 @@ export default function CSVUpload() {
 
       // Step 2: Download the generated report
       const downloadResponse = await fetch(
-        "http://localhost:8000/download-report",
+        "https://rift-money-muling-seven.vercel.app//download-report",
       );
 
       if (!downloadResponse.ok) {
@@ -181,10 +184,13 @@ export default function CSVUpload() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("http://localhost:8000/upload-csv", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://rift-money-muling-seven.vercel.app//upload-csv",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -214,10 +220,13 @@ export default function CSVUpload() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("http://localhost:8000/graph-data", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://rift-money-muling-seven.vercel.app//graph-data",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (res.ok) {
         const graphResult: GraphResponse = await res.json();
@@ -235,10 +244,13 @@ export default function CSVUpload() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("http://localhost:8000/detect-rings", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://rift-money-muling-seven.vercel.app//detect-rings",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (res.ok) {
         const ringResult: RingDetectionResponse = await res.json();
@@ -256,10 +268,13 @@ export default function CSVUpload() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("http://localhost:8000/suspicion-scores", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://rift-money-muling-seven.vercel.app//suspicion-scores",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (res.ok) {
         const scoreResult: SuspicionScoreResponse = await res.json();
@@ -274,9 +289,15 @@ export default function CSVUpload() {
     setLoading(true);
     try {
       const [graphRes, ringRes, scoreRes] = await Promise.all([
-        fetch("http://localhost:8000/graph-data/existing"),
-        fetch("http://localhost:8000/detect-rings/existing"),
-        fetch("http://localhost:8000/suspicion-scores/existing"),
+        fetch(
+          "https://rift-money-muling-seven.vercel.app//graph-data/existing",
+        ),
+        fetch(
+          "https://rift-money-muling-seven.vercel.app//detect-rings/existing",
+        ),
+        fetch(
+          "https://rift-money-muling-seven.vercel.app//suspicion-scores/existing",
+        ),
       ]);
 
       if (graphRes.ok) {
