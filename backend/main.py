@@ -767,14 +767,15 @@ def combine_all_rings(
     return list(cycle_rings) + list(smurfing_rings) + list(layered_rings)
 
 
-def calculate_aggregated_risk_score(pattern: str, member_count: int) -> int:
+def calculate_aggregated_risk_score(pattern: str, member_count: int) -> float:
     """
-    Compute an integer risk score using the fixed formula:
-        risk_score = base_score + min(10, number_of_members)
-    Clamped to a maximum of 100.
+    Compute a risk score in the range 0.0–1.0 using the fixed formula:
+        raw = base_score + min(10, number_of_members)   (0-100)
+        risk_score = raw / 100                           (0.0-1.0)
     """
     base = _RISK_BASE_SCORES.get(pattern, 80)
-    return min(100, base + min(10, member_count))
+    raw = min(100, base + min(10, member_count))
+    return round(raw / 100.0, 4)
 
 
 def assign_risk_scores(rings: List[SuspiciousRing]) -> List[SuspiciousRing]:
@@ -868,6 +869,7 @@ class SuspiciousAccount(BaseModel):
     account_id: str
     suspicion_score: int
     involved_rings: List[str]
+    is_merchant: bool = False
 
 
 class SuspicionScoreResponse(BaseModel):
@@ -876,6 +878,7 @@ class SuspicionScoreResponse(BaseModel):
     message: str
     total_accounts: int
     suspicious_accounts: List[SuspiciousAccount]
+    merchant_accounts: Dict[str, bool] = {}  # all account_id → is_merchant
 
 
 def build_account_ring_map(
@@ -1049,6 +1052,7 @@ def apply_merchant_penalty(
 def build_final_account_list(
     scores: Dict[str, int],
     account_to_rings: Dict[str, List[str]],
+    metrics: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> List[SuspiciousAccount]:
     """
     Build the final sorted list of suspicious accounts.
@@ -1060,6 +1064,7 @@ def build_final_account_list(
     Args:
         scores: Final computed scores.
         account_to_rings: Mapping of account → ring IDs.
+        metrics: Per-node transaction metrics (for merchant flag).
 
     Returns:
         Sorted list of SuspiciousAccount objects.
@@ -1068,11 +1073,16 @@ def build_final_account_list(
     for account_id in account_to_rings:
         raw_score = scores.get(account_id, 0)
         clamped = max(0, min(100, raw_score))
+        is_merchant = (
+            metrics.get(account_id, {}).get("is_merchant", False)
+            if metrics else False
+        )
         result.append(
             SuspiciousAccount(
                 account_id=account_id,
                 suspicion_score=int(clamped),
                 involved_rings=sorted(account_to_rings[account_id]),
+                is_merchant=is_merchant,
             )
         )
     # Primary: score DESC, secondary: account_id ASC (determinism)
@@ -1158,7 +1168,7 @@ def _extract_pipeline_features(
 def compute_suspicion_scores(
     G: nx.MultiDiGraph,
     fraud_rings: List[SuspiciousRing],
-) -> List[SuspiciousAccount]:
+) -> tuple[List[SuspiciousAccount], Dict[str, bool]]:
     """
     Main entry point for the suspicion scoring engine.
 
@@ -1175,7 +1185,7 @@ def compute_suspicion_scores(
         fraud_rings: Aggregated fraud rings from all detectors.
 
     Returns:
-        Deterministic, sorted list of SuspiciousAccount objects.
+        Tuple of (sorted SuspiciousAccount list, merchant_accounts map for all nodes).
     """
     # Step 1 – ring membership
     account_to_rings = build_account_ring_map(fraud_rings)
@@ -1192,8 +1202,14 @@ def compute_suspicion_scores(
     # Step 5 – merchant penalty
     scores = apply_merchant_penalty(scores, metrics)
 
+    # Build merchant map for ALL nodes
+    merchant_map: Dict[str, bool] = {
+        node: metrics.get(node, {}).get("is_merchant", False)
+        for node in sorted(G.nodes())
+    }
+
     # Step 6 – build & sort output
-    return build_final_account_list(scores, account_to_rings)
+    return build_final_account_list(scores, account_to_rings, metrics), merchant_map
 
 
 @app.post("/build-graph", response_model=GraphAnalysisResponse)
@@ -1283,7 +1299,7 @@ async def detect_suspicious_rings(file: UploadFile = File(...)) -> RingDetection
                 "4_member_rings": len([r for r in suspicious_rings if len(r.members) == 4]),
                 "5_member_rings": len([r for r in suspicious_rings if len(r.members) == 5])
             },
-            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 70]),
+            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 0.7]),
             "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
             "cycle_rings": len([r for r in suspicious_rings if r.pattern == "cycle"]),
             "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
@@ -1367,7 +1383,7 @@ async def detect_rings_from_existing_data() -> RingDetectionResponse:
                 "4_member_rings": len([r for r in suspicious_rings if len(r.members) == 4]),
                 "5_member_rings": len([r for r in suspicious_rings if len(r.members) == 5])
             },
-            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 70]),
+            "high_risk_rings": len([r for r in suspicious_rings if (r.risk_score or 0) > 0.7]),
             "total_ring_amount": sum(r.total_amount or 0 for r in suspicious_rings),
             "cycle_rings": len([r for r in suspicious_rings if r.pattern == "cycle"]),
             "smurfing_fan_in": len([r for r in suspicious_rings if r.pattern == "smurfing_fan_in"]),
@@ -1593,13 +1609,14 @@ async def get_suspicion_scores(file: UploadFile = File(...)) -> SuspicionScoreRe
         layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
         fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings)
 
-        accounts = compute_suspicion_scores(G, fraud_rings)
+        accounts, merchant_map = compute_suspicion_scores(G, fraud_rings)
 
         return SuspicionScoreResponse(
             success=True,
             message=f"Scored {len(accounts)} suspicious accounts from {G.number_of_nodes()} total accounts",
             total_accounts=len(accounts),
             suspicious_accounts=accounts,
+            merchant_accounts=merchant_map,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scoring error: {str(e)}")
@@ -1644,13 +1661,16 @@ async def get_suspicion_scores_existing() -> SuspicionScoreResponse:
         layered_rings = detect_layered_networks(G, incoming_map, outgoing_map)
         fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings)
 
-        accounts = compute_suspicion_scores(G, fraud_rings)
+        fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings)
+
+        accounts, merchant_map = compute_suspicion_scores(G, fraud_rings)
 
         return SuspicionScoreResponse(
             success=True,
             message=f"Scored {len(accounts)} suspicious accounts from existing data ({G.number_of_nodes()} accounts, {G.number_of_edges()} transactions)",
             total_accounts=len(accounts),
             suspicious_accounts=accounts,
+            merchant_accounts=merchant_map,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scoring error: {str(e)}")
@@ -1706,7 +1726,7 @@ def _run_pipeline(transactions: List["Transaction"]) -> Dict[str, Any]:
     fraud_rings = aggregate_fraud_rings(cycle_rings, smurfing_rings, layered_rings_list)
 
     # 3. Compute rule-based suspicion scores
-    suspicious_accounts = compute_suspicion_scores(G, fraud_rings)
+    suspicious_accounts, _merchant_map = compute_suspicion_scores(G, fraud_rings)
 
     # 4. Prepare data for the JSON formatter
     # Convert SuspiciousRing objects to plain dicts

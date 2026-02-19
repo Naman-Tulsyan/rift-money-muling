@@ -77,15 +77,33 @@ interface RingDetectionResponse {
   };
 }
 
+interface SuspiciousAccount {
+  account_id: string;
+  suspicion_score: number;
+  involved_rings: string[];
+  is_merchant: boolean;
+}
+
+interface SuspicionScoreResponse {
+  success: boolean;
+  message: string;
+  total_accounts: number;
+  suspicious_accounts: SuspiciousAccount[];
+  merchant_accounts: Record<string, boolean>;
+}
+
 export default function CSVUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<UploadResponse | null>(null);
   const [graphData, setGraphData] = useState<GraphResponse | null>(null);
   const [ringData, setRingData] = useState<RingDetectionResponse | null>(null);
+  const [suspicionData, setSuspicionData] =
+    useState<SuspicionScoreResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
   const [showRings, setShowRings] = useState(false);
+  const [showSuspicionScores, setShowSuspicionScores] = useState(false);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -145,8 +163,10 @@ export default function CSVUpload() {
       setResponse(null);
       setGraphData(null);
       setRingData(null);
+      setSuspicionData(null);
       setShowGraph(false);
       setShowRings(false);
+      setShowSuspicionScores(false);
       setError(null);
     }
   };
@@ -178,6 +198,7 @@ export default function CSVUpload() {
       if (result.success && result.valid_transactions.length > 0) {
         await fetchGraphData();
         await fetchRingData();
+        await fetchSuspicionScores();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -228,12 +249,34 @@ export default function CSVUpload() {
     }
   };
 
+  const fetchSuspicionScores = async () => {
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("http://localhost:8000/suspicion-scores", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const scoreResult: SuspicionScoreResponse = await res.json();
+        setSuspicionData(scoreResult);
+      }
+    } catch (err) {
+      console.error("Failed to fetch suspicion scores:", err);
+    }
+  };
+
   const loadExistingGraphData = async () => {
     setLoading(true);
     try {
-      const [graphRes, ringRes] = await Promise.all([
+      const [graphRes, ringRes, scoreRes] = await Promise.all([
         fetch("http://localhost:8000/graph-data/existing"),
         fetch("http://localhost:8000/detect-rings/existing"),
+        fetch("http://localhost:8000/suspicion-scores/existing"),
       ]);
 
       if (graphRes.ok) {
@@ -249,6 +292,12 @@ export default function CSVUpload() {
       } else {
         throw new Error("Failed to load existing data");
       }
+
+      if (scoreRes.ok) {
+        const scoreResult: SuspicionScoreResponse = await scoreRes.json();
+        setSuspicionData(scoreResult);
+        setShowSuspicionScores(scoreResult.total_accounts > 0);
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load graph data",
@@ -263,8 +312,10 @@ export default function CSVUpload() {
     setResponse(null);
     setGraphData(null);
     setRingData(null);
+    setSuspicionData(null);
     setShowGraph(false);
     setShowRings(false);
+    setShowSuspicionScores(false);
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -408,6 +459,8 @@ export default function CSVUpload() {
               graphData={graphData.graph}
               stats={graphData.stats}
               suspiciousRings={ringData?.suspicious_rings}
+              suspicionScores={suspicionData?.suspicious_accounts}
+              merchantAccounts={suspicionData?.merchant_accounts}
             />
           )}
         </div>
@@ -496,7 +549,7 @@ export default function CSVUpload() {
                   <div
                     key={ring.ring_id}
                     className={`p-4 rounded-lg border ${
-                      (ring.risk_score || 0) > 5.0
+                      (ring.risk_score || 0) > 0.7
                         ? "border-red-200 bg-red-50"
                         : "border-yellow-200 bg-yellow-50"
                     }`}
@@ -515,12 +568,14 @@ export default function CSVUpload() {
                             <strong>Risk Score:</strong>
                             <span
                               className={`ml-1 font-medium ${
-                                (ring.risk_score || 0) > 5.0
+                                (ring.risk_score || 0) > 0.7
                                   ? "text-red-600"
                                   : "text-yellow-600"
                               }`}
                             >
-                              {ring.risk_score?.toFixed(2) || "0.00"}
+                              {ring.risk_score
+                                ? `${(ring.risk_score * 100).toFixed(1)}%`
+                                : "0.0%"}
                             </span>
                           </span>
                           <span className="text-gray-700">
@@ -535,12 +590,12 @@ export default function CSVUpload() {
                       </div>
                       <div
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          (ring.risk_score || 0) > 5.0
+                          (ring.risk_score || 0) > 0.7
                             ? "bg-red-100 text-red-800"
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {(ring.risk_score || 0) > 5.0
+                        {(ring.risk_score || 0) > 0.7
                           ? "HIGH RISK"
                           : "MODERATE"}
                       </div>
@@ -565,6 +620,8 @@ export default function CSVUpload() {
           graphData={graphData.graph}
           stats={graphData.stats}
           suspiciousRings={ringData?.suspicious_rings}
+          suspicionScores={suspicionData?.suspicious_accounts}
+          merchantAccounts={suspicionData?.merchant_accounts}
         />
       )}
 
@@ -574,6 +631,177 @@ export default function CSVUpload() {
             🎯 Existing Data Ring Analysis
           </h4>
           <p className="text-gray-600 mb-4">{ringData.message}</p>
+        </div>
+      )}
+
+      {/* Account Suspicion Scores Section */}
+      {suspicionData && suspicionData.total_accounts > 0 && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-md bg-amber-50 border border-amber-200">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-medium text-amber-800">
+                  🕵️ Account Suspicion Scores
+                </h3>
+                <p className="text-sm text-amber-700">
+                  {suspicionData.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSuspicionScores(!showSuspicionScores)}
+                className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors"
+              >
+                {showSuspicionScores ? "Hide Scores" : "View Scores"}
+              </button>
+            </div>
+          </div>
+
+          {showSuspicionScores && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4">
+                🎯 Per-Account Suspicion Analysis
+              </h4>
+
+              {/* Score Distribution Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-amber-600">
+                    {suspicionData.total_accounts}
+                  </div>
+                  <div className="text-sm text-gray-600">Flagged Accounts</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {
+                      suspicionData.suspicious_accounts.filter(
+                        (a) => a.suspicion_score >= 80,
+                      ).length
+                    }
+                  </div>
+                  <div className="text-sm text-gray-600">High Risk (≥80)</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {
+                      suspicionData.suspicious_accounts.filter(
+                        (a) =>
+                          a.suspicion_score >= 50 && a.suspicion_score < 80,
+                      ).length
+                    }
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Medium Risk (50-79)
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {
+                      suspicionData.suspicious_accounts.filter(
+                        (a) => a.suspicion_score < 50,
+                      ).length
+                    }
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Low Risk ({"<"}50)
+                  </div>
+                </div>
+              </div>
+
+              {/* Score Legend */}
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Scoring:</strong> Based on ring membership (pattern
+                  type), transaction velocity, and merchant status. Score range:
+                  0-100.
+                </p>
+              </div>
+
+              {/* Account Table */}
+              <div className="max-h-96 overflow-y-auto">
+                <table className="min-w-full">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Account ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Suspicion Score
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Risk Level
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Involved Rings
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {suspicionData.suspicious_accounts.map((account) => (
+                      <tr key={account.account_id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-900">
+                          {account.account_id}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 bg-gray-200 rounded-full h-2.5">
+                              <div
+                                className={`h-2.5 rounded-full ${
+                                  account.suspicion_score >= 80
+                                    ? "bg-red-500"
+                                    : account.suspicion_score >= 50
+                                      ? "bg-orange-500"
+                                      : "bg-yellow-500"
+                                }`}
+                                style={{
+                                  width: `${Math.min(100, account.suspicion_score)}%`,
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">
+                              {account.suspicion_score}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              account.suspicion_score >= 80
+                                ? "bg-red-100 text-red-800"
+                                : account.suspicion_score >= 50
+                                  ? "bg-orange-100 text-orange-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {account.suspicion_score >= 80
+                              ? "HIGH"
+                              : account.suspicion_score >= 50
+                                ? "MEDIUM"
+                                : "LOW"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {account.involved_rings.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {account.involved_rings.map((ringId) => (
+                                <span
+                                  key={ringId}
+                                  className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+                                >
+                                  {ringId}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">None</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

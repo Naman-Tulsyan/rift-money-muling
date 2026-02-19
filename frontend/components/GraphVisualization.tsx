@@ -29,9 +29,18 @@ interface SuspiciousRing {
   transaction_count?: number;
 }
 
+interface SuspiciousAccount {
+  account_id: string;
+  suspicion_score: number;
+  involved_rings: string[];
+  is_merchant: boolean;
+}
+
 interface GraphVisualizationProps {
   graphData: GraphData;
   suspiciousRings?: Array<SuspiciousRing>;
+  suspicionScores?: SuspiciousAccount[];
+  merchantAccounts?: Record<string, boolean>;
   stats?: {
     nodes_count: number;
     edges_count: number;
@@ -44,6 +53,8 @@ export default function GraphVisualization({
   graphData,
   stats,
   suspiciousRings,
+  suspicionScores,
+  merchantAccounts,
 }: GraphVisualizationProps) {
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<Core | null>(null);
@@ -567,6 +578,122 @@ export default function GraphVisualization({
                   <span className="font-medium text-gray-700">Account ID:</span>
                   <div className="text-gray-900">{selectedElement.id}</div>
                 </div>
+
+                {/* Merchant Status */}
+                {(() => {
+                  const isMerchant = merchantAccounts?.[selectedElement.id];
+                  if (isMerchant === undefined) return null;
+                  return (
+                    <div
+                      className={`flex items-center gap-2 px-3 py-2 rounded ${
+                        isMerchant
+                          ? "bg-blue-50 border border-blue-200"
+                          : "bg-gray-50 border border-gray-200"
+                      }`}
+                    >
+                      <span className="text-base">
+                        {isMerchant ? "🏪" : "👤"}
+                      </span>
+                      <span
+                        className={`text-sm font-medium ${
+                          isMerchant ? "text-blue-700" : "text-gray-600"
+                        }`}
+                      >
+                        {isMerchant ? "Merchant Account" : "Individual Account"}
+                      </span>
+                      {isMerchant && (
+                        <span className="ml-auto px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                          HIGH VOLUME
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Suspicion Score */}
+                {(() => {
+                  const account = suspicionScores?.find(
+                    (a) => a.account_id === selectedElement.id,
+                  );
+                  if (account) {
+                    const score = account.suspicion_score;
+                    const level =
+                      score >= 80 ? "HIGH" : score >= 50 ? "MEDIUM" : "LOW";
+                    const colors =
+                      score >= 80
+                        ? {
+                            bg: "bg-red-50",
+                            border: "border-red-200",
+                            text: "text-red-700",
+                            bar: "bg-red-500",
+                            badge: "bg-red-100 text-red-800",
+                          }
+                        : score >= 50
+                          ? {
+                              bg: "bg-orange-50",
+                              border: "border-orange-200",
+                              text: "text-orange-700",
+                              bar: "bg-orange-500",
+                              badge: "bg-orange-100 text-orange-800",
+                            }
+                          : {
+                              bg: "bg-yellow-50",
+                              border: "border-yellow-200",
+                              text: "text-yellow-700",
+                              bar: "bg-yellow-500",
+                              badge: "bg-yellow-100 text-yellow-800",
+                            };
+                    return (
+                      <div
+                        className={`${colors.bg} ${colors.border} border p-3 rounded mt-2`}
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <span className={`font-medium ${colors.text}`}>
+                            🕵️ Suspicion Score
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.badge}`}
+                          >
+                            {level}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 bg-gray-200 rounded-full h-2.5">
+                            <div
+                              className={`h-2.5 rounded-full ${colors.bar}`}
+                              style={{
+                                width: `${Math.min(100, score)}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <span className={`text-sm font-bold ${colors.text}`}>
+                            {score}/100
+                          </span>
+                        </div>
+                        {account.involved_rings.length > 0 && (
+                          <div className="mt-2 text-xs text-gray-600">
+                            Rings:{" "}
+                            {account.involved_rings.map((rid) => (
+                              <span
+                                key={rid}
+                                className="inline-block px-1.5 py-0.5 bg-gray-100 rounded mr-1 mb-1"
+                              >
+                                {rid}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="bg-green-50 border border-green-200 p-2 rounded mt-2">
+                      <span className="text-sm text-green-700">
+                        ✅ No suspicion flags
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* Ring Information */}
                 {suspiciousRings && suspiciousRings.length > 0 && (

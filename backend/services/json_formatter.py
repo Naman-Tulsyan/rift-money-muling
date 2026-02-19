@@ -24,7 +24,7 @@ _REPORT_FILENAME = "latest_report.json"
 
 def _risk_level(score: int) -> str:
     """
-    Map a suspicion score to a risk level label.
+    Map a suspicion score (0-100) to a risk level label.
 
     score >= 80  → HIGH
     score >= 50  → MEDIUM
@@ -58,7 +58,7 @@ def format_fraud_rings(
             "ring_id": ring["ring_id"],
             "pattern": ring["pattern"],
             "members": list(ring["members"]),
-            "risk_score": int(ring["risk_score"]),
+            "risk_score": round(float(ring["risk_score"]), 4),
         })
 
     # Sort by risk_score descending; stable sort preserves insertion order on ties
