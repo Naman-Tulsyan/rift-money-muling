@@ -14,8 +14,26 @@ from typing import Any, Dict, List, Optional
 # Constants
 # ---------------------------------------------------------------------------
 
-_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+_DEFAULT_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+_TMP_OUTPUT_DIR = os.path.join("/tmp", "output")
 _REPORT_FILENAME = "latest_report.json"
+
+
+def _get_output_dir() -> str:
+    """Return a writable output directory, falling back to /tmp on serverless."""
+    # Try the default directory first
+    try:
+        os.makedirs(_DEFAULT_OUTPUT_DIR, exist_ok=True)
+        # Verify it's actually writable
+        test_path = os.path.join(_DEFAULT_OUTPUT_DIR, ".write_test")
+        with open(test_path, "w") as f:
+            f.write("ok")
+        os.remove(test_path)
+        return _DEFAULT_OUTPUT_DIR
+    except OSError:
+        # Read-only filesystem (e.g. AWS Lambda) — use /tmp
+        os.makedirs(_TMP_OUTPUT_DIR, exist_ok=True)
+        return _TMP_OUTPUT_DIR
 
 
 # ---------------------------------------------------------------------------
@@ -171,10 +189,20 @@ def _save_report(report: Dict[str, Any]) -> str:
     """
     Write the report dict to ``output/latest_report.json``.
 
+    Falls back to ``/tmp/output/`` on read-only file systems (e.g. AWS Lambda).
     Returns the absolute path of the written file.
     """
-    os.makedirs(_OUTPUT_DIR, exist_ok=True)
-    path = os.path.join(_OUTPUT_DIR, _REPORT_FILENAME)
+    out_dir = _get_output_dir()
+    path = os.path.join(out_dir, _REPORT_FILENAME)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     return path
+
+
+def get_report_path() -> Optional[str]:
+    """Return the path to the latest report if it exists, else None."""
+    for d in (_DEFAULT_OUTPUT_DIR, _TMP_OUTPUT_DIR):
+        p = os.path.join(d, _REPORT_FILENAME)
+        if os.path.exists(p):
+            return p
+    return None

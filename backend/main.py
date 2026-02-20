@@ -1895,8 +1895,10 @@ async def download_report() -> FileResponse:
     Returns ``output/latest_report.json`` with the download filename
     ``fraud_detection_report.json``.
     """
-    report_path = os.path.join(os.path.dirname(__file__), "output", "latest_report.json")
-    if not os.path.exists(report_path):
+    from services.json_formatter import get_report_path
+
+    report_path = get_report_path()
+    if report_path is None:
         raise HTTPException(
             status_code=404,
             detail="No report available. Run POST /analyze first.",
